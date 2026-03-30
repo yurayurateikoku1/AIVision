@@ -1,0 +1,143 @@
+QMainWindow {
+    background-color: white;
+}
+
+QWidget {
+    background-color: white;
+}
+
+/* 按钮样式 */
+QPushButton {
+    background-color: #82a5d0;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 16px;
+    padding: 13px 19px;
+    font-size: 15px;
+    font-weight: bold;
+    border-bottom: 4px solid #a6bddd;
+}
+QPushButton:hover {
+    background-color: #c6d4e8;
+}
+QPushButton:pressed {
+    border-bottom: 0px;          
+    padding-top: 15px;           
+    padding-bottom: 11px;
+}
+
+
+/* SpinBox样式 */
+QDoubleSpinBox {
+    min-height: 32px;            
+	min-width:0px;
+}
+QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: left center; 
+    width: 32px;
+    height: 32px;
+    margin: 0;
+	border:none; 
+}
+QDoubleSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: right center; 
+    width: 32px;
+    height: 32px;
+    margin: 0;
+	border:none; 
+}
+QDoubleSpinBox::up-button:hover,
+QDoubleSpinBox::down-button:hover {
+	background: #eeeeee;  
+}
+QDoubleSpinBox::up-button:pressed,
+QDoubleSpinBox::down-button:pressed {
+	background: #d0d0d0;  
+}
+QDoubleSpinBox::up-arrow {
+    image: url(:/assets/add.png);  
+    width: 32px;                  
+    height: 32px;
+}
+QDoubleSpinBox::down-arrow {
+    image: url(:/assets/subtract.png); 
+    width: 32px;
+    height: 32px;
+}
+
+QSpinBox {
+    min-height: 32px;            
+}
+QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: left center; 
+    width: 32px;
+    height: 32px;
+    margin: 0;
+	border:none; 
+}
+QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: right center; 
+    width: 32px;
+    height: 32px;
+    margin: 0;
+	border:none; 
+}
+QSpinBox::up-button:hover,
+QSpinBox::down-button:hover {
+	background: #eeeeee;  
+}
+QSpinBox::up-button:pressed,
+QSpinBox::down-button:pressed {
+	background: #d0d0d0;  
+}
+QSpinBox::up-arrow {
+    image: url(:/assets/add.png);  
+    width: 32px;                  
+    height: 32px;
+}
+QSpinBox::down-arrow {
+    image: url(:/assets/subtract.png); 
+    width: 32px;
+    height: 32px;
+}
+
+
+
+QPushButton#pushButton_config,
+QPushButton#pushButton_scaleWindow,
+QPushButton#pushButton_roi,
+QPushButton#pushButton_workflow {
+    background-color: #edf1f7;
+    color: rgb(73, 76, 75);
+    border: none;
+    border-radius: 2px;
+
+    font-size: 11px;
+    font-weight: bold;
+
+    padding: 3px 6px;
+    min-width: 44px;
+    min-height: 18px;
+}
+
+QPushButton#pushButton_config:hover,
+QPushButton#pushButton_scaleWindow:hover,
+QPushButton#pushButton_roi:hover,
+QPushButton#pushButton_workflow:hover {
+    background-color: #cad7e8;
+}
+QPushButton#pushButton_config:pressed,
+QPushButton#pushButton_scaleWindow:pressed,
+QPushButton#pushButton_roi:pressed,
+QPushButton#pushButton_workflow:pressed {
+    background-color: #e4eaf3;
+}
+
+/* ListWidget 选中项样式 */
+QListWidget::item:selected {
+    background-color: #cad7e8;
+}

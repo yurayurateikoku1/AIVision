@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+    <bold>false</bold>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="7,3">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QWidget" name="widget_region_camera" native="true">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="widget_region_operation" native="true"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>33</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="sizeIncrement">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(73, 76, 75);
+background-color: #edf1f7;</string>
+   </property>
+   <property name="defaultUp">
+    <bool>false</bool>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
+   <widget class="QMenu" name="menu_product_type">
+    <property name="minimumSize">
+     <size>
+      <width>0</width>
+      <height>0</height>
+     </size>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="title">
+     <string>产品类型</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_open_image">
+    <property name="title">
+     <string>打开图像</string>
+    </property>
+    <addaction name="action_open_folder"/>
+   </widget>
+   <widget class="QMenu" name="menu_parameter_setting">
+    <property name="title">
+     <string>参数设定</string>
+    </property>
+    <addaction name="action_parameter"/>
+    <addaction name="action_camera"/>
+   </widget>
+   <widget class="QMenu" name="menu_user">
+    <property name="minimumSize">
+     <size>
+      <width>48</width>
+      <height>48</height>
+     </size>
+    </property>
+    <property name="baseSize">
+     <size>
+      <width>0</width>
+      <height>0</height>
+     </size>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+      <bold>false</bold>
+      <kerning>true</kerning>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>用户管理</string>
+    </property>
+    <property name="tearOffEnabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>用户管理</string>
+    </property>
+    <property name="separatorsCollapsible">
+     <bool>false</bool>
+    </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <addaction name="menu_product_type"/>
+   <addaction name="menu_open_image"/>
+   <addaction name="menu_parameter_setting"/>
+   <addaction name="menu_user"/>
+  </widget>
+  <action name="action_parameter">
+   <property name="icon">
+    <iconset resource="../../resource.qrc">
+     <normaloff>:/assets/yingjianguanli.png</normaloff>:/assets/yingjianguanli.png</iconset>
+   </property>
+   <property name="text">
+    <string>IO参数</string>
+   </property>
+   <property name="font">
+    <font>
+     <bold>true</bold>
+    </font>
+   </property>
+  </action>
+  <action name="action_camera">
+   <property name="icon">
+    <iconset resource="../../resource.qrc">
+     <normaloff>:/assets/xiangjicanshu.png</normaloff>:/assets/xiangjicanshu.png</iconset>
+   </property>
+   <property name="text">
+    <string>Camera参数</string>
+   </property>
+   <property name="font">
+    <font>
+     <bold>true</bold>
+    </font>
+   </property>
+  </action>
+  <action name="action_open_folder">
+   <property name="icon">
+    <iconset resource="../../resource.qrc">
+     <normaloff>:/assets/folder.png</normaloff>:/assets/folder.png</iconset>
+   </property>
+   <property name="text">
+    <string>打开文件夹</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../../resource.qrc"/>
+ </resources>
+ <connections/>
+</ui>
