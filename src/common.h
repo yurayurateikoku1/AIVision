@@ -117,6 +117,58 @@ struct Defect
     HalconCpp::HObject contour; // 缺陷区域轮廓（XLD/Region，任意形状）
 };
 
+/// @brief 形状匹配参数
+struct ShapeMatchParam
+{
+    double angle_start = -0.39;          // 起始角度 (rad)
+    double angle_extent = 0.78;          // 角度范围 (rad)
+    double angle_step = 0.0;             // 角度步长，0=自动
+    double scale_min = 0.9;              // 最小缩放
+    double scale_max = 1.1;              // 最大缩放
+    double scale_step = 0.0;             // 缩放步长，0=自动
+    double min_score = 0.5;              // 最低匹配分数
+    int num_matches = 1;                 // 最大匹配数量
+    double max_overlap = 0.5;            // 最大重叠比
+    double greediness = 0.9;             // 贪心度 (0~1)
+    int num_levels = 0;                  // 金字塔层数，0=自动
+    std::string metric = "use_polarity"; // 匹配极性
+};
+
+/// @brief 形状匹配结果
+struct ShapeMatchResult
+{
+    HalconCpp::HTuple row;
+    HalconCpp::HTuple col;
+    HalconCpp::HTuple angle;
+    HalconCpp::HTuple scale;
+    HalconCpp::HTuple score;
+
+    int count() const { return static_cast<int>(score.Length()); }
+};
+
+/// @brief 检测方法
+enum class DetectMethod
+{
+    AI,
+    MatchTemplate,
+};
+
+/// @brief 端子检测参数
+struct TerminalParam
+{
+    DetectMethod method = DetectMethod::AI;
+    AIInfer::YOLOSettings yolo_settings{
+        .model_path = "data/model/DZ.xml",
+        .score_threshold = 0.5f,
+        .nms_threshold = 0.5f,
+        .image_stride = 32,
+        .task_type = AIInfer::TaskType::YOLO_OBB,
+        .engine_type = AIInfer::EngineType::OPENVINO};
+    ShapeMatchParam shape_match_param;
+    int count = 1;              // 预期数量
+    int parts_per_terminal = 0; // 预期部件数
+};
+
 /// @brief 端子单个部件的检测结果
 struct TerminalPart
 {
@@ -135,26 +187,15 @@ struct TerminalResult
     bool is_complete(int expected) const { return expected <= 0 || static_cast<int>(parts.size()) >= expected; }
 };
 
-/// @brief 端子检测参数
-struct TerminalParam
-{
-    AIInfer::YOLOSettings yolo_settings{
-        .model_path = "data/model/DZ.xml",
-        .score_threshold = 0.5f,
-        .nms_threshold = 0.5f,
-        .image_stride = 32,
-        .task_type = AIInfer::TaskType::YOLO_OBB,
-        .engine_type = AIInfer::EngineType::OPENVINO};
-    int count = 1;              // 预期端子数量
-    int parts_per_terminal = 0; // 每个端子的部件数
-};
+/// @brief 检测器结果（与 WorkflowParam::detector_param 的 variant 对应）
+using DetectorResult = std::variant<std::monostate, std::vector<TerminalResult>, ShapeMatchResult>;
 
 /// @brief 检测结果
 struct InspectionResult
 {
     bool pass = true;
     std::vector<Defect> defects;
-    std::vector<TerminalResult> terminal_results; // 端子检测结果
+    DetectorResult detector_result; // 检测器专属结果
     int64_t timestamp_ms = 0;
 };
 
@@ -192,6 +233,9 @@ struct WorkflowParam
     float exposure_override = -1.0f; // <=0 不覆盖
     RoiParam roi;
 
-    /// 检测器参数：monostate = 不检测，TerminalParam = 端子检测
+    /// 检测器参数：monostate = 不检测，
+    /// TerminalParam = 端子检测
+    /// ConductorParam = 电缆检测
+    /// PlasticCasingParam =检测
     std::variant<std::monostate, TerminalParam> detector_param;
 };

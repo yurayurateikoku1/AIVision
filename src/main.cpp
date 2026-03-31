@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
         file.close();
     }
 
-    // 依赖注入：显式创建，生命周期由栈管理，析构顺序确定
     auto &ctx = Context::getInstance();
 
     CameraMgr cam_mgr;

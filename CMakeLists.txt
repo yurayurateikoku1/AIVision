@@ -77,9 +77,10 @@ set(PROJECT_SOURCES
 
     #algorithm
     src/algorithm/interface_detector.h
-    src/algorithm/utils.h
+    src/algorithm/utils.h 
+    src/algorithm/shape_match.h src/algorithm/shape_match.cpp
     src/algorithm/product_class/terminal_detector.h src/algorithm/product_class/terminal_detector.cpp
-   src/algorithm/detector_factory.h
+    src/algorithm/detector_factory.h
 
 
     #ui
