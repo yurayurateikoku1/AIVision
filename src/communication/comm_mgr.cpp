@@ -14,7 +14,7 @@ CommMgr::CommMgr(QObject *parent)
 
         io_timer_ = new QTimer(this);
         connect(io_timer_, &QTimer::timeout, this, &CommMgr::slot_refreshIO);
-        io_timer_->start(200);
+        io_timer_->start(20);
 
         conn_timer_ = new QTimer(this);
         connect(conn_timer_, &QTimer::timeout, this, &CommMgr::slot_checkConnection);
@@ -80,6 +80,20 @@ void CommMgr::addComm(const CommunicationParam &config)
         comm_params_[config.name] = config;
         comms_[config.name] = std::move(comm);
     }
+}
+
+void CommMgr::switchComm(const CommunicationParam &config)
+{
+    auto it = comms_.find(config.name);
+    if (it != comms_.end())
+    {
+        it->second->disconnectDevice();
+        comms_.erase(it);
+    }
+    comm_params_.erase(config.name);
+    addComm(config);
+    SPDLOG_INFO("Comm [{}] switched to {}", config.name,
+                config.protocol == CommProtocol::ModbusTCP ? "TCP" : "RTU");
 }
 
 void CommMgr::disconnectAll()

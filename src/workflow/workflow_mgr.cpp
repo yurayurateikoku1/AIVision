@@ -82,7 +82,7 @@ void WorkflowMgr::updateParam(int di_index, const WorkflowParam &new_param)
     if (di_index < 0 || di_index >= 4)
         return;
     ctx_.workflows[di_index] = new_param;
-    pipelines_[di_index]->onParamUpdated();
+    pipelines_[di_index]->onParamUpdated(new_param);
     SPDLOG_INFO("Pipeline DI{} params updated", di_index);
 }
 

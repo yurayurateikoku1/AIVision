@@ -6,7 +6,7 @@
 #include <taskflow/taskflow.hpp>
 #include <spdlog/spdlog.h>
 
-Pipeline::Pipeline(WorkflowParam &param, const std::string &camera_name,
+Pipeline::Pipeline(const WorkflowParam &param, const std::string &camera_name,
                    CameraMgr &cam_mgr, CommMgr &comm_mgr,
                    const std::string &comm_name, tf::Executor &executor, QObject *parent)
     : QObject(parent), param_(param), camera_name_(camera_name),
@@ -22,8 +22,9 @@ void Pipeline::buildDetector()
                 detector_ ? "built" : "none");
 }
 
-void Pipeline::onParamUpdated()
+void Pipeline::onParamUpdated(const WorkflowParam &new_param)
 {
+    param_ = new_param;
     if (detector_)
         detector_->updateParam(param_);
 }

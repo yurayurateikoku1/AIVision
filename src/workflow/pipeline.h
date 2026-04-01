@@ -19,15 +19,15 @@ class Pipeline : public QObject
 {
     Q_OBJECT
 public:
-    Pipeline(WorkflowParam &param, const std::string &camera_name,
+    Pipeline(const WorkflowParam &param, const std::string &camera_name,
              CameraMgr &cam_mgr, CommMgr &comm_mgr,
              const std::string &comm_name, tf::Executor &executor, QObject *parent = nullptr);
 
     /// @brief 构建/重建检测器（仅 IDLE 状态可调用）
     void buildDetector();
 
-    /// @brief 更新运行时参数到检测器（不重建模型）
-    void onParamUpdated();
+    /// @brief 更新运行时参数（拷贝副本 + 同步到检测器）
+    void onParamUpdated(const WorkflowParam &new_param);
 
     /// @brief DI 边沿检测 + HOLDING_RESULT 超时检查（由 WorkflowMgr IO 轮询调用）
     void onIOUpdate(bool current_di, std::chrono::steady_clock::time_point now);
@@ -71,7 +71,7 @@ private:
     void runInspection();
     void writeDO(bool ok_val, bool ng_val);
 
-    WorkflowParam &param_;
+    WorkflowParam param_;
     std::string camera_name_;
     CameraMgr &cam_mgr_;
     CommMgr &comm_mgr_;

@@ -183,13 +183,20 @@ void CameraWindow::enterRoiMode()
     {
         try
         {
+            // 画之前先刷新显示，清除旧的 ROI 框
+            QMetaObject::invokeMethod(this, [this]()
+            {
+                if (current_image_.IsInitialized())
+                    displayImage(current_image_);
+            }, Qt::BlockingQueuedConnection);
+
             double r1, c1, r2, c2;
             hwindow_->DrawRectangle1(&r1, &c1, &r2, &c2);
             QMetaObject::invokeMethod(this, [this, r1, c1, r2, c2]()
             {
                 if (current_image_.IsInitialized())
                 {
-                    hwindow_->SetColor("green");
+                    hwindow_->SetColor("blue");
                     hwindow_->SetDraw("margin");
                     hwindow_->SetLineWidth(2);
                     HalconCpp::DispRectangle1(*hwindow_, r1, c1, r2, c2);

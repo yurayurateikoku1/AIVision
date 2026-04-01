@@ -36,6 +36,9 @@ public:
     /// @brief 获取 Halcon 窗口句柄（供外部叠加图形、画 ROI 等）
     HalconCpp::HWindow *getHalconWindow() { return hwindow_.get(); }
 
+    /// @brief 获取当前显示的图像
+    const HalconCpp::HObject &getCurrentImage() const { return current_image_; }
+
     /// @brief 进入 ROI 框选模式，使用 Halcon DrawRectangle1 交互
     void enterRoiMode();
 

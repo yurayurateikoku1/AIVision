@@ -29,6 +29,8 @@ public:
 
     /// @brief 添加通信
     void addComm(const CommunicationParam &config);
+    /// @brief 切换通信方式（断开旧连接，用新配置重建）
+    void switchComm(const CommunicationParam &config);
     /// @brief 断开所有
     void disconnectAll();
     /// @brief 写单个线圈

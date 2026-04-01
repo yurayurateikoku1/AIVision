@@ -7,9 +7,29 @@ TerminalDetector::TerminalDetector(const TerminalParam &param)
 {
     terminal_param_ = param;
     if (param.method == DetectMethod::AI)
+    {
         yolo_ = std::make_unique<AIInfer::YoloDetector>(param.yolo_settings);
-    else
-        matcher_ = std::make_unique<ShapeMatcher>(param.shape_match_param);
+    }
+    else if (param.method == DetectMethod::MatchTemplate)
+    {
+        const auto &shm_path = param.shape_match_param.model_path;
+        if (!shm_path.empty())
+        {
+            matcher_ = std::make_unique<ShapeMatcher>(param.shape_match_param);
+            try
+            {
+                HalconCpp::HTuple model_id;
+                HalconCpp::ReadShapeModel(shm_path.c_str(), &model_id);
+                matcher_->setModelId(model_id);
+                SPDLOG_INFO("Shape model loaded from {}", shm_path);
+            }
+            catch (HalconCpp::HException &e)
+            {
+                SPDLOG_ERROR("ReadShapeModel failed: {}", e.ErrorMessage().Text());
+                matcher_.reset();
+            }
+        }
+    }
 }
 
 void TerminalDetector::updateParam(const WorkflowParam &wp)
@@ -18,10 +38,37 @@ void TerminalDetector::updateParam(const WorkflowParam &wp)
     if (!tp)
         return;
     terminal_param_ = *tp;
-    if (yolo_)
+
+    if (tp->method == DetectMethod::AI)
     {
-        yolo_->setScoreThreshold(tp->yolo_settings.score_threshold);
-        yolo_->setNmsThreshold(tp->yolo_settings.nms_threshold);
+        if (!yolo_)
+            yolo_ = std::make_unique<AIInfer::YoloDetector>(tp->yolo_settings);
+        else
+        {
+            yolo_->setScoreThreshold(tp->yolo_settings.score_threshold);
+            yolo_->setNmsThreshold(tp->yolo_settings.nms_threshold);
+        }
+    }
+    else if (tp->method == DetectMethod::MatchTemplate)
+    {
+        // 从 .shm 文件加载形状模型
+        const auto &shm_path = tp->shape_match_param.model_path;
+        if (!shm_path.empty())
+        {
+            matcher_ = std::make_unique<ShapeMatcher>(tp->shape_match_param);
+            try
+            {
+                HalconCpp::HTuple model_id;
+                HalconCpp::ReadShapeModel(shm_path.c_str(), &model_id);
+                matcher_->setModelId(model_id);
+                SPDLOG_INFO("Shape model loaded from {}", shm_path);
+            }
+            catch (HalconCpp::HException &e)
+            {
+                SPDLOG_ERROR("ReadShapeModel failed: {}", e.ErrorMessage().Text());
+                matcher_.reset();
+            }
+        }
     }
 }
 
@@ -132,16 +179,31 @@ void TerminalDetector::detectShapeMatch(NodeContext &ctx)
     ctx.result.pass = (expected <= 0) || (match_result.count() == expected);
     ctx.result.detector_result = match_result;
 
-    // 生成匹配轮廓用于显示
+    // 获取模型轮廓，仿射变换到每个匹配位置
     HalconCpp::HObject all_contours;
     HalconCpp::GenEmptyObj(&all_contours);
+
+    HalconCpp::HObject model_contours;
+    HalconCpp::GetShapeModelContours(&model_contours, matcher_->getModelId(), 1);
+
     for (int i = 0; i < match_result.count(); i++)
     {
-        HalconCpp::HObject contour;
-        HalconCpp::GenCrossContourXld(&contour,
-                                      match_result.row[i], match_result.col[i],
-                                      20.0, match_result.angle[i].D());
-        HalconCpp::ConcatObj(all_contours, contour, &all_contours);
+        // 构造仿射矩阵：缩放 + 旋转 + 平移
+        HalconCpp::HTuple homo;
+        HalconCpp::HomMat2dIdentity(&homo);
+        HalconCpp::HomMat2dScale(homo,
+            match_result.scale[i], match_result.scale[i],
+            0, 0, &homo);
+        HalconCpp::HomMat2dRotate(homo,
+            match_result.angle[i],
+            0, 0, &homo);
+        HalconCpp::HomMat2dTranslate(homo,
+            match_result.row[i], match_result.col[i],
+            &homo);
+
+        HalconCpp::HObject transformed;
+        HalconCpp::AffineTransContourXld(model_contours, &transformed, homo);
+        HalconCpp::ConcatObj(all_contours, transformed, &all_contours);
     }
     ctx.result_contours = all_contours;
 

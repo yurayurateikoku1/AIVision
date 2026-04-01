@@ -1,6 +1,7 @@
 #include <QApplication>
 #include "ui/main_window.h"
 #include "context.h"
+#include "config_mgr.h"
 #include "camera/camera_mgr.h"
 #include "communication/comm_mgr.h"
 #include "workflow/workflow_mgr.h"
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
     }
 
     auto &ctx = Context::getInstance();
+    ConfigMgr::getInstance(); // 加载 config.json 覆盖 Context 默认值
 
     CameraMgr cam_mgr;
     CommMgr comm_mgr;

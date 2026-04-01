@@ -105,6 +105,7 @@ void HikCamera::closeCamera()
     // 标记关闭 — imageCallback 检查后直接 return，不再持锁
     flag_opened_ = false;
     flag_is_grabbing_ = false;
+    cached_exposure_us_ = -1.0f;
 
     // 停止抓取（SDK 内部会等待回调退出）
     MV_CC_StopGrabbing(h);
@@ -189,8 +190,12 @@ bool HikCamera::setExposureTime(float us)
     std::lock_guard lock(handler_mutex_);
     if (!handler_)
         return false;
+    if (cached_exposure_us_ == us)
+        return true;
     MV_CC_SetEnumValue(handler_, "ExposureAuto", 0);
     int ret = MV_CC_SetFloatValue(handler_, "ExposureTime", us);
+    if (ret == MV_OK)
+        cached_exposure_us_ = us;
     return ret == MV_OK;
 }
 
@@ -463,6 +468,7 @@ void HikCamera::forceCloseCamera()
 
     flag_opened_ = false;
     flag_is_grabbing_ = false;
+    cached_exposure_us_ = -1.0f;
 
     MV_CC_StopGrabbing(h);
 

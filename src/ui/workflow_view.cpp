@@ -76,13 +76,17 @@ void WorkflowView::initPage()
                     ctx_.workflows[i].enabled = enabled;
                 });
 
-        // 配置 — 直接调 WorkflowMgr，不经过 MainWindow
+        // 配置 — 非模态对话框，允许同时操作相机窗口（如画 ROI）
         connect(row, &WorkflowRow::sign_configClicked, this,
                 [this, i](int index)
                 {
-                    WorkflowConfigDialog dlg(ctx_.workflows[i], this);
-                    if (dlg.exec() == QDialog::Accepted)
-                        wf_mgr_.updateParam(i, dlg.getResult());
+                    auto *dlg = new WorkflowConfigDialog(ctx_.workflows[i], camera_view_, this);
+                    dlg->setAttribute(Qt::WA_DeleteOnClose);
+                    connect(dlg, &QDialog::accepted, this, [this, i, dlg]()
+                    {
+                        wf_mgr_.updateParam(i, dlg->getResult());
+                    });
+                    dlg->show();
                 });
     }
 }

@@ -152,4 +152,5 @@ private:
     std::atomic<bool> flag_is_grabbing_ = false;
     std::atomic<bool> flag_opened_ = false;
     std::mutex handler_mutex_;
+    float cached_exposure_us_ = -1.0f;            // 曝光缓存，避免重复下发
 };

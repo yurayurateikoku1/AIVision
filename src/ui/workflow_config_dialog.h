@@ -7,11 +7,13 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class WorkflowConfigDialog; }
 QT_END_NAMESPACE
 
+class CameraWindow;
+
 class WorkflowConfigDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit WorkflowConfigDialog(const WorkflowParam &param, QWidget *parent = nullptr);
+    explicit WorkflowConfigDialog(const WorkflowParam &param, CameraWindow *camera_view = nullptr, QWidget *parent = nullptr);
     ~WorkflowConfigDialog() override;
 
     /// @brief 返回编辑后的参数副本

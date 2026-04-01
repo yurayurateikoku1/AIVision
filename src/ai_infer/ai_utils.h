@@ -39,43 +39,48 @@ namespace AIInfer
         box.height = static_cast<int>(box.height / info.scale);
     }
 
+    // 按类别 NMS：通过给不同类别加大偏移量，使不同类别的框不会互相抑制
     inline void NMSBoxes(const std::vector<Detection> &dets,
                          float conf_threshold, float nms_threshold,
                          std::vector<int> &indices)
     {
+        constexpr int CLASS_OFFSET = 7680;
         std::vector<cv::Rect> boxes;
         std::vector<float> scores;
         for (const auto &d : dets)
         {
             if (d.conf < conf_threshold)
                 continue;
-            boxes.emplace_back(d.box);
+            cv::Rect shifted = d.box;
+            shifted.x += d.cls * CLASS_OFFSET;
+            shifted.y += d.cls * CLASS_OFFSET;
+            boxes.emplace_back(shifted);
             scores.emplace_back(d.conf);
         }
         cv::dnn::NMSBoxes(boxes, scores, conf_threshold, nms_threshold, indices);
     }
 
-    // OBB 旋转矩形 NMS
+    // OBB 旋转矩形按类别 NMS
     inline void NMSBoxesRotated(const std::vector<DetectionObb> &dets,
                                 float conf_threshold, float nms_threshold,
                                 std::vector<int> &indices)
     {
+        constexpr float CLASS_OFFSET = 7680.0f;
         std::vector<cv::RotatedRect> boxes;
         std::vector<float> scores;
         for (const auto &d : dets)
         {
             if (d.detection.conf < conf_threshold)
                 continue;
-            // RotatedRect: 中心点 + 尺寸 + 角度（度）
+            float offset = d.detection.cls * CLASS_OFFSET;
             cv::RotatedRect rr(
-                cv::Point2f(d.detection.box.x + d.detection.box.width / 2.0f,
-                            d.detection.box.y + d.detection.box.height / 2.0f),
+                cv::Point2f(d.detection.box.x + d.detection.box.width / 2.0f + offset,
+                            d.detection.box.y + d.detection.box.height / 2.0f + offset),
                 cv::Size2f(d.detection.box.width, d.detection.box.height),
-                d.angle * 180.0f / CV_PI); // 弧度 → 度
+                d.angle * 180.0f / CV_PI);
             boxes.push_back(rr);
             scores.push_back(d.detection.conf);
         }
-        // NMSBoxes 的 RotatedRect 重载
         cv::dnn::NMSBoxes(boxes, scores, conf_threshold, nms_threshold, indices);
     }
 

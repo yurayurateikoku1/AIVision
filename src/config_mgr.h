@@ -1,20 +1,46 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include "common.h"
 #include <string>
 
-/// @brief 配置管理器：纯文件 I/O，负责 JSON 配置的加载/保存
-///        加载时将数据填充到 Context，保存时从 Context 读取
+// ── JSON 序列化声明 ──────────────────────────────────────────
+
+void to_json(json &j, const LightControlParam &p);
+void from_json(const json &j, LightControlParam &p);
+
+void to_json(json &j, const CommunicationParam &p);
+void from_json(const json &j, CommunicationParam &p);
+
+void to_json(json &j, const CameraControlParam &p);
+void from_json(const json &j, CameraControlParam &p);
+
+void to_json(json &j, const RoiParam &p);
+void from_json(const json &j, RoiParam &p);
+
+void to_json(json &j, const ShapeMatchParam &p);
+void from_json(const json &j, ShapeMatchParam &p);
+
+namespace AIInfer
+{
+void to_json(json &j, const YOLOSettings &p);
+void from_json(const json &j, YOLOSettings &p);
+}
+
+void to_json(json &j, const TerminalParam &p);
+void from_json(const json &j, TerminalParam &p);
+
+void to_json(json &j, const WorkflowParam &p);
+void from_json(const json &j, WorkflowParam &p);
+
+// ── 配置管理器 ───────────────────────────────────────────────
+
 class ConfigMgr
 {
 public:
     static ConfigMgr &getInstance();
     ~ConfigMgr();
 
-    /// @brief 从 JSON 文件加载配置到 AppContext
     bool loadConfig(const std::string &path = "data/config.json");
-
-    /// @brief 从 AppContext 读取配置保存到 JSON 文件
     bool saveConfig(const std::string &path = "data/config.json");
 
 private:

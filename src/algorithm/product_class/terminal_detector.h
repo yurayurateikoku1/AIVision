@@ -14,6 +14,7 @@ public:
 
 private:
     void detectAI(NodeContext &ctx);
+
     void detectShapeMatch(NodeContext &ctx);
 
     TerminalParam terminal_param_;

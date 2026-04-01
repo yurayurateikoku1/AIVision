@@ -132,6 +132,8 @@ struct ShapeMatchParam
     double greediness = 0.9;             // 贪心度 (0~1)
     int num_levels = 0;                  // 金字塔层数，0=自动
     std::string metric = "use_polarity"; // 匹配极性
+    std::string template_image_path;     // 模板图路径
+    std::string model_path;              // 形状模型文件路径 (.shm)
 };
 
 /// @brief 形状匹配结果

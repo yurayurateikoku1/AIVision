@@ -2,13 +2,14 @@
 #include "ui_workflow_config_dialog.h"
 #include "product_class/detector_param_widget_factory.h"
 
-WorkflowConfigDialog::WorkflowConfigDialog(const WorkflowParam &param, QWidget *parent)
+WorkflowConfigDialog::WorkflowConfigDialog(const WorkflowParam &param, CameraWindow *camera_view, QWidget *parent)
     : QDialog(parent), ui(new Ui::WorkflowConfigDialog), param_(param)
 {
     ui->setupUi(this);
     loadCommon();
 
-    QWidget *detector_widget = createDetectorParamWidget(param_.detector_param, detector_apply_fn_, this);
+    QWidget *detector_widget = createDetectorParamWidget(
+        param_.detector_param, detector_apply_fn_, param_.di_index, camera_view, this);
     if (detector_widget)
     {
         ui->label_noDetector->hide();
