@@ -12,6 +12,8 @@
 #include "../camera/camera_mgr.h"
 #include "../communication/comm_mgr.h"
 #include "../workflow/workflow_mgr.h"
+#include "param/ioparam_dialog.h"
+#include "param/camera_param_dialog.h"
 
 MainWindow::MainWindow(Context &ctx, CameraMgr &cam_mgr, CommMgr &comm_mgr, WorkflowMgr &wf_mgr,
                        QWidget *parent)
@@ -20,7 +22,7 @@ MainWindow::MainWindow(Context &ctx, CameraMgr &cam_mgr, CommMgr &comm_mgr, Work
 {
     ui->setupUi(this);
 
-    // 单相机
+    // 初始化单相机UI
     initCamera();
 
     // 右侧面板
@@ -30,7 +32,8 @@ MainWindow::MainWindow(Context &ctx, CameraMgr &cam_mgr, CommMgr &comm_mgr, Work
     op_layout->setContentsMargins(0, 0, 0, 0);
     op_layout->setSpacing(0);
     op_layout->addWidget(workflow_view_);
-    op_layout->addWidget(operation_view_, 1);
+    op_layout->addWidget(operation_view_);
+    op_layout->addStretch();
 
     // 传递相机视图
     workflow_view_->setCameraView(camera_view_);
@@ -44,6 +47,7 @@ MainWindow::MainWindow(Context &ctx, CameraMgr &cam_mgr, CommMgr &comm_mgr, Work
                 SPDLOG_INFO("Selected workflow: DI{}", di_index);
             });
 
+    // 初始化通讯
     initCommunication();
 
     // 检测结果 → 刷新相机窗口
@@ -64,10 +68,14 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_action_parameter_triggered()
 {
+    IOParamDialog dlg(ctx_, this);
+    dlg.exec();
 }
 
 void MainWindow::on_action_camera_triggered()
 {
+    CameraParamDialog dlg(ctx_, cam_mgr_, this);
+    dlg.exec();
 }
 
 void MainWindow::on_action_open_folder_triggered()

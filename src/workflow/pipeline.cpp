@@ -1,5 +1,5 @@
 #include "pipeline.h"
-#include "../algorithm/detector_factory.h"
+#include "../algorithm/product_class/detector_factory.h"
 #include "../algorithm/utils.h"
 #include "../camera/camera_mgr.h"
 #include "../communication/comm_mgr.h"

@@ -3,6 +3,7 @@
 #include "../common.h"
 #include <halconcpp/HalconCpp.h>
 
+/// @brief 形状模板匹配
 class ShapeMatcher
 {
 public:

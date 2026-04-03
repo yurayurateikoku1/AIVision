@@ -6,7 +6,7 @@
 TerminalDetector::TerminalDetector(const TerminalParam &param)
 {
     terminal_param_ = param;
-    if (param.method == DetectMethod::AI)
+    if (param.method == DetectMethod::AIInfer)
     {
         yolo_ = std::make_unique<AIInfer::YoloDetector>(param.yolo_settings);
     }
@@ -39,7 +39,9 @@ void TerminalDetector::updateParam(const WorkflowParam &wp)
         return;
     terminal_param_ = *tp;
 
-    if (tp->method == DetectMethod::AI)
+    switch (tp->method)
+    {
+    case DetectMethod::AIInfer:
     {
         if (!yolo_)
             yolo_ = std::make_unique<AIInfer::YoloDetector>(tp->yolo_settings);
@@ -49,7 +51,7 @@ void TerminalDetector::updateParam(const WorkflowParam &wp)
             yolo_->setNmsThreshold(tp->yolo_settings.nms_threshold);
         }
     }
-    else if (tp->method == DetectMethod::MatchTemplate)
+    case DetectMethod::MatchTemplate:
     {
         // 从 .shm 文件加载形状模型
         const auto &shm_path = tp->shape_match_param.model_path;
@@ -70,6 +72,9 @@ void TerminalDetector::updateParam(const WorkflowParam &wp)
             }
         }
     }
+    default:
+        break;
+    }
 }
 
 void TerminalDetector::detect(NodeContext &ctx)
@@ -78,7 +83,7 @@ void TerminalDetector::detect(NodeContext &ctx)
 
     switch (terminal_param_.method)
     {
-    case DetectMethod::AI:
+    case DetectMethod::AIInfer:
         detectAI(ctx);
         break;
     case DetectMethod::MatchTemplate:
@@ -192,14 +197,14 @@ void TerminalDetector::detectShapeMatch(NodeContext &ctx)
         HalconCpp::HTuple homo;
         HalconCpp::HomMat2dIdentity(&homo);
         HalconCpp::HomMat2dScale(homo,
-            match_result.scale[i], match_result.scale[i],
-            0, 0, &homo);
+                                 match_result.scale[i], match_result.scale[i],
+                                 0, 0, &homo);
         HalconCpp::HomMat2dRotate(homo,
-            match_result.angle[i],
-            0, 0, &homo);
+                                  match_result.angle[i],
+                                  0, 0, &homo);
         HalconCpp::HomMat2dTranslate(homo,
-            match_result.row[i], match_result.col[i],
-            &homo);
+                                     match_result.row[i], match_result.col[i],
+                                     &homo);
 
         HalconCpp::HObject transformed;
         HalconCpp::AffineTransContourXld(model_contours, &transformed, homo);

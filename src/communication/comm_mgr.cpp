@@ -170,7 +170,7 @@ bool CommMgr::isCommConnected(const std::string &name) const
 
 void CommMgr::slot_refreshIO()
 {
-    auto it = comms_.find("plc_1");
+    auto it = comms_.begin();
     if (it == comms_.end() || !it->second->isConnected())
         return;
 

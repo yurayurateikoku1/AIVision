@@ -6,24 +6,141 @@ QWidget {
     background-color: white;
 }
 
+QRadioButton {
+    spacing: 0px;
+}
+
+QRadioButton::indicator {
+    width: 40px;
+    height: 20px;
+    border: none;  
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(:/assets/switch0.png);   
+}
+
+QRadioButton::indicator:checked {
+    image: url(:/assets/switch1.png);  
+}
+
+QCheckBox {
+    spacing: 0px;
+}
+
+QCheckBox::indicator {
+    width: 40px;
+    height: 20px;
+    border: none;  
+}
+
+QCheckBox::indicator:unchecked {
+    image: url(:/assets/checkbox0.png);   
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/assets/checkbox1.png);  
+}
+
+
+QCheckBox#checkBox_DI0::indicator:unchecked,
+QCheckBox#checkBox_DI1::indicator:unchecked,
+QCheckBox#checkBox_DI2::indicator:unchecked,
+QCheckBox#checkBox_DI3::indicator:unchecked,
+QCheckBox#checkBox_DI4::indicator:unchecked,
+QCheckBox#checkBox_DI5::indicator:unchecked,
+QCheckBox#checkBox_DI6::indicator:unchecked,
+QCheckBox#checkBox_DI7::indicator:unchecked,
+QCheckBox#checkBox_DO0::indicator:unchecked,
+QCheckBox#checkBox_DO1::indicator:unchecked,
+QCheckBox#checkBox_DO2::indicator:unchecked,
+QCheckBox#checkBox_DO3::indicator:unchecked,
+QCheckBox#checkBox_DO4::indicator:unchecked,
+QCheckBox#checkBox_DO5::indicator:unchecked,
+QCheckBox#checkBox_DO6::indicator:unchecked,
+QCheckBox#checkBox_DO7::indicator:unchecked {
+    image: url(:/assets/IOsign0.png);   
+}
+
+QCheckBox#checkBox_DI0::indicator:checked,
+QCheckBox#checkBox_DI1::indicator:checked,
+QCheckBox#checkBox_DI2::indicator:checked,
+QCheckBox#checkBox_DI3::indicator:checked,
+QCheckBox#checkBox_DI4::indicator:checked,
+QCheckBox#checkBox_DI5::indicator:checked,
+QCheckBox#checkBox_DI6::indicator:checked,
+QCheckBox#checkBox_DI7::indicator:checked,
+QCheckBox#checkBox_DO0::indicator:checked,
+QCheckBox#checkBox_DO1::indicator:checked,
+QCheckBox#checkBox_DO2::indicator:checked,
+QCheckBox#checkBox_DO3::indicator:checked,
+QCheckBox#checkBox_DO4::indicator:checked,
+QCheckBox#checkBox_DO5::indicator:checked,
+QCheckBox#checkBox_DO6::indicator:checked,
+QCheckBox#checkBox_DO7::indicator:checked {
+    image: url(:/assets/IOsign1.png);  
+}
+
+
 /* 按钮样式 */
 QPushButton {
-    background-color: #82a5d0;
-    color: #FFFFFF;
+    background-color: #528BFF;
+    color: #ffffff;
     border: none;
-    border-radius: 16px;
-    padding: 13px 19px;
-    font-size: 15px;
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
     font-weight: bold;
-    border-bottom: 4px solid #a6bddd;
+    border-bottom: 4px solid #82a4ff;
 }
 QPushButton:hover {
-    background-color: #c6d4e8;
+    background-color: #82a4ff;
 }
 QPushButton:pressed {
-    border-bottom: 0px;          
-    padding-top: 15px;           
-    padding-bottom: 11px;
+    border-bottom: 0px;
+    padding-top: 10px;
+    padding-bottom: 6px;
+}
+
+QPushButton#pushButton_lunchSystem {
+    background-color: #82C362;
+    color: #3a5068;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 4px solid #92da6f;
+}
+QPushButton#pushButton_lunchSystem:pressed {
+    border-bottom: 0px;
+    padding-top: 10px;
+    padding-bottom: 6px;
+}
+
+QPushButton#pushButton_stopSystem {
+    background-color: #dc3546;
+    color: #3a5068;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 4px solid #ee5a65;
+}
+QPushButton#pushButton_stopSystem:hover {
+    background-color: #ee5a65;
+}
+QPushButton#pushButton_stopSystem:pressed {
+    border-bottom: 0px;
+    padding-top: 10px;
+    padding-bottom: 6px;
+}
+
+
+QGroupBox {
+    /* 设置边框：宽度 颜色 实线 */
+    border: 1px solid #ffffff; 
 }
 
 

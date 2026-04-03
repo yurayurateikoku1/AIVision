@@ -28,9 +28,15 @@ void OperationView::showCurrentImage()
 {
     HalconCpp::HObject image = loadCurrentImage();
     if (!image.IsInitialized())
+    {
+        SPDLOG_WARN("Failed to load image[{}]: {}", image_index_,
+                    image_paths_.empty() ? "" : image_paths_[image_index_].toStdString());
         return;
+    }
     if (camera_view_)
         camera_view_->updateFrame(image);
+    else
+        SPDLOG_WARN("camera_view_ is null");
 }
 
 HalconCpp::HObject OperationView::loadCurrentImage() const
@@ -38,8 +44,14 @@ HalconCpp::HObject OperationView::loadCurrentImage() const
     if (image_paths_.empty())
         return {};
     HalconCpp::HObject image;
-    try { HalconCpp::ReadImage(&image, image_paths_[image_index_].toStdString().c_str()); }
-    catch (...) {}
+    try
+    {
+        HalconCpp::ReadImage(&image, image_paths_[image_index_].toLocal8Bit().constData());
+    }
+    catch (HalconCpp::HException &e)
+    {
+        SPDLOG_ERROR("ReadImage failed [{}]: {}", image_paths_[image_index_].toStdString(), e.ErrorMessage().Text());
+    }
     return image;
 }
 
@@ -61,14 +73,16 @@ void OperationView::on_pushButton_testImage_clicked()
 
 void OperationView::on_pushButton_nextImage_clicked()
 {
-    if (image_paths_.empty()) return;
+    if (image_paths_.empty())
+        return;
     image_index_ = (image_index_ + 1) % static_cast<int>(image_paths_.size());
     showCurrentImage();
 }
 
 void OperationView::on_pushButton_previousImage_clicked()
 {
-    if (image_paths_.empty()) return;
+    if (image_paths_.empty())
+        return;
     image_index_ = (image_index_ - 1 + static_cast<int>(image_paths_.size())) % static_cast<int>(image_paths_.size());
     showCurrentImage();
 }

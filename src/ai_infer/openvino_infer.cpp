@@ -22,6 +22,7 @@ namespace AIInfer
             std::filesystem::path cache_dir =
                 std::filesystem::path(model_path).parent_path() / "ov_cache";
             core_.set_property("CPU", ov::cache_dir(cache_dir.string()));
+            core_.set_property("CPU", ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
 
             // 检测输入是否为动态维度
             is_dynamic_ = true;

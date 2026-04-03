@@ -29,16 +29,22 @@ public:
 
     /// @brief 添加通信
     void addComm(const CommunicationParam &config);
+
     /// @brief 切换通信方式（断开旧连接，用新配置重建）
     void switchComm(const CommunicationParam &config);
+
     /// @brief 断开所有
     void disconnectAll();
+
     /// @brief 写单个线圈
     void writeSingleCoil(const std::string &comm_name, uint16_t addr, bool value);
+
     /// @brief 写多个寄存器
     void writeMultipleRegisters(const std::string &comm_name, uint16_t addr, const std::vector<uint16_t> &values);
+
     /// @brief 打开光源串口
     void openLightSerial(const std::string &port, int baud_rate);
+
     /// @brief 设置光源亮度
     void setLuminance(int channel, int luminance);
 
@@ -54,7 +60,6 @@ private slots:
     void slot_checkConnection();
 
 private:
-
     QThread worker_thread_;
     QTimer *io_timer_ = nullptr;
     QTimer *conn_timer_ = nullptr;

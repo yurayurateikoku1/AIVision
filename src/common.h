@@ -23,7 +23,7 @@ private:
     std::function<void()> func_;
 };
 
-/// @brief 通信协议类
+/// @brief 通信协议类型
 enum class CommProtocol
 {
     ModbusRTU, // 串口 → PLC/外设
@@ -151,14 +151,14 @@ struct ShapeMatchResult
 /// @brief 检测方法
 enum class DetectMethod
 {
-    AI,
+    AIInfer,
     MatchTemplate,
 };
 
 /// @brief 端子检测参数
 struct TerminalParam
 {
-    DetectMethod method = DetectMethod::AI;
+    DetectMethod method = DetectMethod::AIInfer;
     AIInfer::YOLOSettings yolo_settings{
         .model_path = "data/model/DZ.xml",
         .score_threshold = 0.5f,

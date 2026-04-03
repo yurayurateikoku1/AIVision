@@ -43,6 +43,8 @@ public:
 
     /// @brief 异步读线圈 (FC01)，结果通过回调返回
     void readCoils(uint16_t addr, uint16_t count, readCoilsCallback cb);
+    /// @brief 同步读线圈（阻塞等待应答，仅在子线程调用）
+    bool readCoilsSync(uint16_t addr, uint16_t count, std::vector<bool> &out);
     /// @brief 异步写单个线圈 (FC05)
     void writeSingleCoil(uint16_t addr, bool value, writeCallback cb = nullptr);
 

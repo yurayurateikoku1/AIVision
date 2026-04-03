@@ -1,23 +1,26 @@
 <RCC>
     <qresource prefix="/">
         <file>assets/add.png</file>
-        <file>assets/fangdachuangkou2x.png</file>
-        <file>assets/guanli.png</file>
-        <file>assets/jiekoupeizhi.png</file>
         <file>assets/lunch.png</file>
+        <file>assets/chanpin.png</file>
         <file>assets/nextimage.png</file>
-        <file>assets/stop.png</file>
-        <file>assets/subtract.png</file>
-        <file>assets/suoxiaochuangkou2x.png</file>
-        <file>assets/tupian.png</file>
-        <file>assets/qukuai.png</file>
+        <file>assets/fangdachuangkou2x.png</file>
         <file>assets/previousimage.png</file>
+        <file>assets/stop.png</file>
+        <file>assets/folder.png</file>
+        <file>assets/switch1.png</file>
+        <file>assets/subtract.png</file>
         <file>assets/user.png</file>
         <file>assets/xiangjicanshu.png</file>
         <file>assets/yingjianguanli.png</file>
         <file>assets/zhuangtaideng0.png</file>
         <file>assets/zhuangtaideng1.png</file>
-        <file>assets/folder.png</file>
+        <file>assets/suoxiaochuangkou2x.png</file>
+        <file>assets/switch0.png</file>
         <file>src/ui/style/style.qss</file>
+        <file>assets/checkbox0.png</file>
+        <file>assets/checkbox1.png</file>
+        <file>assets/IOsign0.png</file>
+        <file>assets/IOsign1.png</file>
     </qresource>
 </RCC>

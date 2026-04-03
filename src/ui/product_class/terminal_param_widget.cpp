@@ -13,14 +13,19 @@ TerminalParamWidget::TerminalParamWidget(TerminalParam &param, int di_index, QWi
 
     ui->widget_templateWindow->setStyleSheet("background-color: #1e1e1e;");
 
+    ui->spinBox_terminalCount->setValue(param_.count);
+
+    // 检测方法 — radio 切换 stackedWidget 页面
+    ui->radioButton_aiInfer->setChecked(param_.method == DetectMethod::AIInfer);
+    ui->radioButton_matchTemplate->setChecked(param_.method == DetectMethod::MatchTemplate);
+    ui->stackedWidget_method->setCurrentIndex(param_.method == DetectMethod::AIInfer ? 0 : 1);
+
+    connect(ui->radioButton_aiInfer, &QRadioButton::toggled, this, [this](bool checked)
+            { ui->stackedWidget_method->setCurrentIndex(checked ? 0 : 1); });
+
     // AI 参数
     ui->doubleSpinBox_confThreshold->setValue(param_.yolo_settings.score_threshold);
     ui->doubleSpinBox_nmsThreshold->setValue(param_.yolo_settings.nms_threshold);
-    ui->spinBox_terminalCount->setValue(param_.count);
-
-    // 检测方法
-    ui->radioButton_aiInfer->setChecked(param_.method == DetectMethod::AI);
-    ui->radioButton_matchTemplate->setChecked(param_.method == DetectMethod::MatchTemplate);
 
     // 形状匹配参数
     ui->doubleSpinBox_scaleMin->setValue(param_.shape_match_param.scale_min);
@@ -30,11 +35,9 @@ TerminalParamWidget::TerminalParamWidget(TerminalParam &param, int di_index, QWi
     ui->doubleSpinBox_minScore->setValue(param_.shape_match_param.min_score);
     ui->spinBox_numLevels->setValue(param_.shape_match_param.num_levels);
 
-    ui->pushButton_setTerminalSettings->hide();
-
     // 点击"创建模板"→ 在相机窗口画 ROI → 裁剪 → 创建模型 → 保存 → 显示
     connect(ui->pushButton_createTemplate, &QPushButton::clicked, this, [this]()
-    {
+            {
         if (!camera_view_)
         {
             SPDLOG_WARN("No camera window available");
@@ -89,15 +92,13 @@ TerminalParamWidget::TerminalParamWidget(TerminalParam &param, int di_index, QWi
                 {
                     SPDLOG_ERROR("Create template failed: {}", e.ErrorMessage().Text());
                 }
-            }, Qt::SingleShotConnection);
-    });
+            }, Qt::SingleShotConnection); });
 
     // 延迟初始化：加载已有的模板图
     QTimer::singleShot(0, this, [this]()
-    {
+                       {
         initTemplateWindow();
-        loadExistingTemplate();
-    });
+        loadExistingTemplate(); });
 }
 
 TerminalParamWidget::~TerminalParamWidget()
@@ -106,12 +107,13 @@ TerminalParamWidget::~TerminalParamWidget()
     delete ui;
 }
 
-void TerminalParamWidget::apply()
+void TerminalParamWidget::applyParam()
 {
     param_.yolo_settings.score_threshold = static_cast<float>(ui->doubleSpinBox_confThreshold->value());
     param_.yolo_settings.nms_threshold = static_cast<float>(ui->doubleSpinBox_nmsThreshold->value());
     param_.count = ui->spinBox_terminalCount->value();
-    param_.method = ui->radioButton_aiInfer->isChecked() ? DetectMethod::AI : DetectMethod::MatchTemplate;
+    param_.shape_match_param.num_matches = param_.count;
+    param_.method = ui->radioButton_aiInfer->isChecked() ? DetectMethod::AIInfer : DetectMethod::MatchTemplate;
 
     param_.shape_match_param.scale_min = ui->doubleSpinBox_scaleMin->value();
     param_.shape_match_param.scale_max = ui->doubleSpinBox_scaleMax->value();

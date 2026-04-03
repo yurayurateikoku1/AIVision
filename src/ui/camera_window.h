@@ -31,6 +31,9 @@ public:
     void updateFrameWithOverlay(const HalconCpp::HObject &image, const HalconCpp::HObject &contours, bool pass);
 
     void setStatus(bool online);
+
+    void setResult(bool pass);
+
     std::string getCameraName() const { return camera_name_; }
 
     /// @brief 获取 Halcon 窗口句柄（供外部叠加图形、画 ROI 等）
@@ -45,10 +48,16 @@ public:
 signals:
     /// @brief 帧到达（已在主线程，可直接连接 WorkflowManager）
     void sign_frameArrived(const std::string &camera_name, const HalconCpp::HObject &frame);
+
     /// @brief 相机错误
     void sign_cameraErrorArrived(const std::string &camera_name, int error_code);
+
+    /// @brief 最大化
     void sign_maximizeRequested(const std::string &camera_name);
+
+    /// @brief 选中相机
     void sign_selected(const std::string &camera_name);
+
     /// @brief ROI 框选完成，坐标为图像坐标系
     void sign_roiSelected(double row1, double col1, double row2, double col2);
 private slots:
@@ -59,7 +68,11 @@ private slots:
 private:
     void initHalconWindow();
     void displayImage(const HalconCpp::HObject &image);
+    void redisplay();
     void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
+    void resetView();
 
     Ui::CameraWindow *ui;
     CameraMgr &cam_mgr_;
@@ -70,4 +83,14 @@ private:
     int hwindow_w_ = 0;
     int hwindow_h_ = 0;
     HalconCpp::HObject current_image_;
+
+    // 初始 fit-to-window 的 part（用于右键复原）
+    HalconCpp::HTuple fit_row1_, fit_col1_, fit_row2_, fit_col2_;
+    // 拖拽平移
+    bool dragging_ = false;
+    QPoint drag_start_;
+    HalconCpp::HTuple drag_row1_, drag_col1_, drag_row2_, drag_col2_;
+
+    // 节流：避免高频 redisplay
+    bool redisplay_pending_ = false;
 };

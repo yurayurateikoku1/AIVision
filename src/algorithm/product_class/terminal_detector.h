@@ -1,5 +1,5 @@
 #pragma once
-#include "../interface_detector.h"
+#include "interface_detector.h"
 #include "../../ai_infer/yolo.h"
 #include "../shape_match.h"
 #include <memory>

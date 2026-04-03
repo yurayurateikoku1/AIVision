@@ -11,10 +11,11 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 list(PREPEND CMAKE_PREFIX_PATH
-    "D:/C++Library/spdlog-1.17.0/build/install/lib/cmake/spdlog"
-    "D:/C++Library/json-3.12.0/build/install/share/cmake/nlohmann_json"
-    "D:/C++Library/openvino_toolkit_windows_2026.0.0.20965.c6d6a13a886_x86_64/runtime/cmake"
-    "D:/C++Library/opencv-4.12/build/x64/vc16/lib"
+    "D:/C++Libs/spdlog-1.17.0/build/install/lib/cmake/spdlog"
+    "D:/C++Libs/json-3.12.0/build/install/share/cmake/nlohmann_json"
+    "D:/C++Libs/openvino_toolkit_windows_2026.0.0.20965.c6d6a13a886_x86_64/runtime/cmake"
+    "D:/C++Libs/opencv-4.12/build/x64/vc16/lib"
+    "D:/C++Libs/boost_1_90_0/lib64-msvc-14.3/cmake"
 )
 
 if(MSVC)
@@ -43,7 +44,7 @@ set(MVS_INCLUDE_DIR "${MVS_SDK_DIR}/Includes")
 set(MVS_LIB_DIR    "${MVS_SDK_DIR}/Libraries/win64")
 
 # HACLON SDK
-set(HACLON_SDK_DIR "D:/C++Library/haclon-25.11SDK")
+set(HACLON_SDK_DIR "D:/C++Libs/haclon-25.11SDK")
 set(HACLON_INCLUDE_DIR "${HACLON_SDK_DIR}/include")
 set(HACLON_LIB_DIR    "${HACLON_SDK_DIR}/lib/x64-win64")
 
@@ -76,12 +77,10 @@ set(PROJECT_SOURCES
     src/workflow/pipeline.h src/workflow/pipeline.cpp
 
     #algorithm
-    src/algorithm/interface_detector.h
     src/algorithm/utils.h 
     src/algorithm/shape_match.h src/algorithm/shape_match.cpp
     src/algorithm/product_class/terminal_detector.h src/algorithm/product_class/terminal_detector.cpp
-    src/algorithm/detector_factory.h
-
+    src/algorithm/product_class/detector_factory.h     src/algorithm/product_class/interface_detector.h
 
     #ui
     src/ui/main_window.cpp src/ui/main_window.h src/ui/main_window.ui
@@ -89,6 +88,9 @@ set(PROJECT_SOURCES
     src/ui/workflow_view.cpp src/ui/workflow_view.h src/ui/workflow_view.ui
     src/ui/workflow_row.cpp src/ui/workflow_row.h src/ui/workflow_row.ui
     src/ui/operation_view.cpp src/ui/operation_view.h src/ui/operation_view.ui
+
+    src/ui/param/camera_param_dialog.cpp src/ui/param/camera_param_dialog.h src/ui/param/camera_param_dialog.ui
+    src/ui/param/ioparam_dialog.cpp src/ui/param/ioparam_dialog.h src/ui/param/ioparam_dialog.ui
 
     src/ui/product_class/terminal_param_widget.cpp src/ui/product_class/terminal_param_widget.h src/ui/product_class/terminal_param_dialog.ui
     src/ui/product_class/detector_param_widget_factory.h
@@ -123,7 +125,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${MVS_INCLUDE_DIR}
     ${HACLON_INCLUDE_DIR}
-    D:/C++Library/taskflow-4.0.0
+    D:/C++Libs/taskflow-4.0.0
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -170,7 +172,7 @@ if(WIN32)
     endif()
 
     # ── OpenVINO DLLs ──
-    set(_ov_sdk_dir "D:/C++Library/openvino_toolkit_windows_2026.0.0.20965.c6d6a13a886_x86_64/runtime")
+    set(_ov_sdk_dir "D:/C++Libs/openvino_toolkit_windows_2026.0.0.20965.c6d6a13a886_x86_64/runtime")
     file(GLOB _ov_dlls "${_ov_sdk_dir}/bin/intel64/Release/openvino*.dll")
     file(GLOB _tbb_dlls "${_ov_sdk_dir}/3rdparty/tbb/bin/tbb*.dll")
     list(FILTER _tbb_dlls EXCLUDE REGEX "_debug\\.dll$")

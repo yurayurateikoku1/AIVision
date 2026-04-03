@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>IOParamDialog</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../../resource.qrc">
+    <normaloff>:/assets/yingjianguanli.png</normaloff>:/assets/yingjianguanli.png</iconset>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
     <number>0</number>
@@ -58,7 +62,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="label_12">
           <property name="text">
-           <string>通道1亮度</string>
+           <string>通道0亮度</string>
           </property>
          </widget>
         </item>
@@ -73,35 +77,35 @@
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="QSpinBox" name="spinBox_ch4Brightness"/>
+         <widget class="QSpinBox" name="spinBox_luminance3"/>
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="label_14">
           <property name="text">
-           <string>通道3亮度</string>
+           <string>通道2亮度</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QSpinBox" name="spinBox_ch1Brightness"/>
+         <widget class="QSpinBox" name="spinBox_luminance0"/>
         </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="spinBox_ch2Brightness"/>
+         <widget class="QSpinBox" name="spinBox_luminance1"/>
         </item>
         <item row="3" column="1">
-         <widget class="QSpinBox" name="spinBox_ch3Brightness"/>
+         <widget class="QSpinBox" name="spinBox_luminance2"/>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_13">
           <property name="text">
-           <string>通道2亮度</string>
+           <string>通道1亮度</string>
           </property>
          </widget>
         </item>
         <item row="4" column="0">
          <widget class="QLabel" name="label_15">
           <property name="text">
-           <string>通道4亮度</string>
+           <string>通道3亮度</string>
           </property>
          </widget>
         </item>
@@ -252,7 +256,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QPushButton" name="pushButton_setParam">
+      <widget class="QPushButton" name="pushButton_setIOParam">
        <property name="text">
         <string>设置参数</string>
        </property>
@@ -336,6 +340,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

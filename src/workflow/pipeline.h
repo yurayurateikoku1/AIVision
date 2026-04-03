@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../common.h"
-#include "../algorithm/interface_detector.h"
+#include "../algorithm/product_class/interface_detector.h"
 #include <QObject>
 #include <halconcpp/HalconCpp.h>
 #include <atomic>
@@ -9,7 +9,10 @@
 #include <memory>
 #include <chrono>
 
-namespace tf { class Executor; }
+namespace tf
+{
+    class Executor;
+}
 class CameraMgr;
 class CommMgr;
 

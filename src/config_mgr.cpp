@@ -8,35 +8,35 @@ using json = nlohmann::json;
 // ── enum 序列化（宏必须在全局或对应命名空间） ────────────────
 
 NLOHMANN_JSON_SERIALIZE_ENUM(CommProtocol, {
-    {CommProtocol::ModbusRTU, "RTU"},
-    {CommProtocol::ModbusTCP, "TCP"},
-})
+                                               {CommProtocol::ModbusRTU, "RTU"},
+                                               {CommProtocol::ModbusTCP, "TCP"},
+                                           })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(TriggerMode, {
-    {TriggerMode::Continuous, "Continuous"},
-    {TriggerMode::SoftTrigger, "SoftTrigger"},
-    {TriggerMode::HardTrigger, "HardTrigger"},
-})
+                                              {TriggerMode::Continuous, "Continuous"},
+                                              {TriggerMode::SoftTrigger, "SoftTrigger"},
+                                              {TriggerMode::HardTrigger, "HardTrigger"},
+                                          })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(DetectMethod, {
-    {DetectMethod::AI, "AI"},
-    {DetectMethod::MatchTemplate, "MatchTemplate"},
-})
+                                               {DetectMethod::AIInfer, "AI"},
+                                               {DetectMethod::MatchTemplate, "MatchTemplate"},
+                                           })
 
 namespace AIInfer
 {
-NLOHMANN_JSON_SERIALIZE_ENUM(TaskType, {
-    {TaskType::YOLO_DET, "YOLO_DET"},
-    {TaskType::YOLO_OBB, "YOLO_OBB"},
-})
+    NLOHMANN_JSON_SERIALIZE_ENUM(TaskType, {
+                                               {TaskType::YOLO_DET, "YOLO_DET"},
+                                               {TaskType::YOLO_OBB, "YOLO_OBB"},
+                                           })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(EngineType, {
-    {EngineType::OPENVINO, "OPENVINO"},
-})
+    NLOHMANN_JSON_SERIALIZE_ENUM(EngineType, {
+                                                 {EngineType::OPENVINO, "OPENVINO"},
+                                             })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(InputDimensionType, {
-    {InputDimensionType::DYNAMIC, "DYNAMIC"},
-})
+    NLOHMANN_JSON_SERIALIZE_ENUM(InputDimensionType, {
+                                                         {InputDimensionType::DYNAMIC, "DYNAMIC"},
+                                                     })
 }
 
 // ── 结构体序列化 ─────────────────────────────────────────────
@@ -44,27 +44,22 @@ NLOHMANN_JSON_SERIALIZE_ENUM(InputDimensionType, {
 // LightControlParam
 void to_json(json &j, const LightControlParam &p)
 {
-    j = json{{"serial_port", p.serial_port}, {"baud_rate", p.baud_rate},
-             {"luminance", {p.luminance[0], p.luminance[1], p.luminance[2], p.luminance[3]}},
-             {"use_modbus", p.use_modbus}};
+    j = json{{"serial_port", p.serial_port}, {"baud_rate", p.baud_rate}, {"luminance", {p.luminance[0], p.luminance[1], p.luminance[2], p.luminance[3]}}, {"use_modbus", p.use_modbus}};
 }
 void from_json(const json &j, LightControlParam &p)
 {
     j.at("serial_port").get_to(p.serial_port);
     j.at("baud_rate").get_to(p.baud_rate);
     auto lum = j.at("luminance");
-    for (int i = 0; i < 4; i++) p.luminance[i] = lum[i].get<int>();
+    for (int i = 0; i < 4; i++)
+        p.luminance[i] = lum[i].get<int>();
     j.at("use_modbus").get_to(p.use_modbus);
 }
 
 // CommunicationParam
 void to_json(json &j, const CommunicationParam &p)
 {
-    j = json{{"name", p.name}, {"protocol", p.protocol},
-             {"ip", p.ip}, {"port", p.port},
-             {"serial_port", p.serial_port}, {"baud_rate", p.baud_rate},
-             {"data_bits", p.data_bits}, {"stop_bits", p.stop_bits},
-             {"parity", p.parity}, {"slave_address", p.slave_address}};
+    j = json{{"name", p.name}, {"protocol", p.protocol}, {"ip", p.ip}, {"port", p.port}, {"serial_port", p.serial_port}, {"baud_rate", p.baud_rate}, {"data_bits", p.data_bits}, {"stop_bits", p.stop_bits}, {"parity", p.parity}, {"slave_address", p.slave_address}};
 }
 void from_json(const json &j, CommunicationParam &p)
 {
@@ -83,9 +78,7 @@ void from_json(const json &j, CommunicationParam &p)
 // CameraControlParam
 void to_json(json &j, const CameraControlParam &p)
 {
-    j = json{{"name", p.name}, {"ip", p.ip},
-             {"exposure_time", p.exposure_time}, {"gain", p.gain},
-             {"trigger_mode", p.trigger_mode}, {"rotation_deg", p.rotation_deg}};
+    j = json{{"name", p.name}, {"ip", p.ip}, {"exposure_time", p.exposure_time}, {"gain", p.gain}, {"trigger_mode", p.trigger_mode}, {"rotation_deg", p.rotation_deg}};
 }
 void from_json(const json &j, CameraControlParam &p)
 {
@@ -100,8 +93,7 @@ void from_json(const json &j, CameraControlParam &p)
 // RoiParam
 void to_json(json &j, const RoiParam &p)
 {
-    j = json{{"enabled", p.enabled}, {"row1", p.row1}, {"col1", p.col1},
-             {"row2", p.row2}, {"col2", p.col2}};
+    j = json{{"enabled", p.enabled}, {"row1", p.row1}, {"col1", p.col1}, {"row2", p.row2}, {"col2", p.col2}};
 }
 void from_json(const json &j, RoiParam &p)
 {
@@ -115,14 +107,7 @@ void from_json(const json &j, RoiParam &p)
 // ShapeMatchParam
 void to_json(json &j, const ShapeMatchParam &p)
 {
-    j = json{{"angle_start", p.angle_start}, {"angle_extent", p.angle_extent},
-             {"angle_step", p.angle_step}, {"scale_min", p.scale_min},
-             {"scale_max", p.scale_max}, {"scale_step", p.scale_step},
-             {"min_score", p.min_score}, {"num_matches", p.num_matches},
-             {"max_overlap", p.max_overlap}, {"greediness", p.greediness},
-             {"num_levels", p.num_levels}, {"metric", p.metric},
-             {"template_image_path", p.template_image_path},
-             {"model_path", p.model_path}};
+    j = json{{"angle_start", p.angle_start}, {"angle_extent", p.angle_extent}, {"angle_step", p.angle_step}, {"scale_min", p.scale_min}, {"scale_max", p.scale_max}, {"scale_step", p.scale_step}, {"min_score", p.min_score}, {"num_matches", p.num_matches}, {"max_overlap", p.max_overlap}, {"greediness", p.greediness}, {"num_levels", p.num_levels}, {"metric", p.metric}, {"template_image_path", p.template_image_path}, {"model_path", p.model_path}};
 }
 void from_json(const json &j, ShapeMatchParam &p)
 {
@@ -145,34 +130,28 @@ void from_json(const json &j, ShapeMatchParam &p)
 // AIInfer::YOLOSettings（必须在 AIInfer 命名空间内）
 namespace AIInfer
 {
-void to_json(json &j, const YOLOSettings &p)
-{
-    j = json{{"model_path", p.model_path}, {"score_threshold", p.score_threshold},
-             {"nms_threshold", p.nms_threshold}, {"image_stride", p.image_stride},
-             {"infer_size", p.infer_size}, {"task_type", p.task_type},
-             {"input_type", p.input_type}, {"engine_type", p.engine_type},
-             {"end2end", p.end2end}};
-}
-void from_json(const json &j, YOLOSettings &p)
-{
-    j.at("model_path").get_to(p.model_path);
-    j.at("score_threshold").get_to(p.score_threshold);
-    j.at("nms_threshold").get_to(p.nms_threshold);
-    j.at("image_stride").get_to(p.image_stride);
-    j.at("infer_size").get_to(p.infer_size);
-    j.at("task_type").get_to(p.task_type);
-    j.at("input_type").get_to(p.input_type);
-    j.at("engine_type").get_to(p.engine_type);
-    j.at("end2end").get_to(p.end2end);
-}
+    void to_json(json &j, const YOLOSettings &p)
+    {
+        j = json{{"model_path", p.model_path}, {"score_threshold", p.score_threshold}, {"nms_threshold", p.nms_threshold}, {"image_stride", p.image_stride}, {"infer_size", p.infer_size}, {"task_type", p.task_type}, {"input_type", p.input_type}, {"engine_type", p.engine_type}, {"end2end", p.end2end}};
+    }
+    void from_json(const json &j, YOLOSettings &p)
+    {
+        j.at("model_path").get_to(p.model_path);
+        j.at("score_threshold").get_to(p.score_threshold);
+        j.at("nms_threshold").get_to(p.nms_threshold);
+        j.at("image_stride").get_to(p.image_stride);
+        j.at("infer_size").get_to(p.infer_size);
+        j.at("task_type").get_to(p.task_type);
+        j.at("input_type").get_to(p.input_type);
+        j.at("engine_type").get_to(p.engine_type);
+        j.at("end2end").get_to(p.end2end);
+    }
 }
 
 // TerminalParam
 void to_json(json &j, const TerminalParam &p)
 {
-    j = json{{"method", p.method}, {"yolo_settings", p.yolo_settings},
-             {"shape_match_param", p.shape_match_param},
-             {"count", p.count}, {"parts_per_terminal", p.parts_per_terminal}};
+    j = json{{"method", p.method}, {"yolo_settings", p.yolo_settings}, {"shape_match_param", p.shape_match_param}, {"count", p.count}, {"parts_per_terminal", p.parts_per_terminal}};
 }
 void from_json(const json &j, TerminalParam &p)
 {
@@ -186,10 +165,7 @@ void from_json(const json &j, TerminalParam &p)
 // WorkflowParam（variant 手动处理）
 void to_json(json &j, const WorkflowParam &p)
 {
-    j = json{{"di_index", p.di_index}, {"enabled", p.enabled},
-             {"do_ok_addr", p.do_ok_addr}, {"do_ng_addr", p.do_ng_addr},
-             {"result_hold_ms", p.result_hold_ms}, {"delay_ms", p.delay_ms},
-             {"exposure_override", p.exposure_override}, {"roi", p.roi}};
+    j = json{{"di_index", p.di_index}, {"enabled", p.enabled}, {"do_ok_addr", p.do_ok_addr}, {"do_ng_addr", p.do_ng_addr}, {"result_hold_ms", p.result_hold_ms}, {"delay_ms", p.delay_ms}, {"exposure_override", p.exposure_override}, {"roi", p.roi}};
 
     if (auto *tp = std::get_if<TerminalParam>(&p.detector_param))
     {

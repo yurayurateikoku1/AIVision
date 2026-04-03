@@ -6,12 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>526</width>
-    <height>542</height>
+    <width>362</width>
+    <height>383</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>CameraParamDialog</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../../resource.qrc">
+    <normaloff>:/assets/xiangjicanshu.png</normaloff>:/assets/xiangjicanshu.png</iconset>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
@@ -95,6 +99,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

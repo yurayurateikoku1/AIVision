@@ -1,7 +1,7 @@
 #pragma once
-#include "../common.h"
+#include "../../common.h"
 #include "interface_detector.h"
-#include "product_class/terminal_detector.h"
+#include "terminal_detector.h"
 #include <memory>
 #include <spdlog/spdlog.h>
 

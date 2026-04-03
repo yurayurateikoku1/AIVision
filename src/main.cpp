@@ -12,7 +12,7 @@
 int main(int argc, char *argv[])
 {
     // Haclon 环境变量
-    _putenv_s("HALCONROOT", "D:\\C++Library\\haclon-25.11SDK");
+    _putenv_s("HALCONROOT", "D:\\C++Libs\\haclon-25.11SDK");
     _putenv_s("HALCONARCH", "x64-win64");
 
     spdlog::set_default_logger(spdlog::stdout_color_mt("console"));
