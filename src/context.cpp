@@ -1,4 +1,5 @@
 #include "context.h"
+#include "config_mgr.h"
 
 Context &Context::getInstance()
 {
@@ -38,5 +39,6 @@ Context::Context()
 
     // DI0 默认启用端子检测
     workflows[0].enabled = true;
+    workflows[0].detector_type = "Terminal";
     workflows[0].detector_param = TerminalParam{};
 }

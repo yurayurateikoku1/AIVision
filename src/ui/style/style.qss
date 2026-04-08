@@ -224,7 +224,7 @@ QSpinBox::down-arrow {
 
 
 
-QPushButton#pushButton_config,
+QPushButton#pushButton_detector,
 QPushButton#pushButton_scaleWindow,
 QPushButton#pushButton_roi,
 QPushButton#pushButton_workflow {
@@ -241,13 +241,13 @@ QPushButton#pushButton_workflow {
     min-height: 18px;
 }
 
-QPushButton#pushButton_config:hover,
+QPushButton#pushButton_detector:hover,
 QPushButton#pushButton_scaleWindow:hover,
 QPushButton#pushButton_roi:hover,
 QPushButton#pushButton_workflow:hover {
     background-color: #cad7e8;
 }
-QPushButton#pushButton_config:pressed,
+QPushButton#pushButton_detector:pressed,
 QPushButton#pushButton_scaleWindow:pressed,
 QPushButton#pushButton_roi:pressed,
 QPushButton#pushButton_workflow:pressed {

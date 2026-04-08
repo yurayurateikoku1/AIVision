@@ -14,6 +14,7 @@
 #include "../workflow/workflow_mgr.h"
 #include "param/ioparam_dialog.h"
 #include "param/camera_param_dialog.h"
+#include "param/workflow_config_dialog.h"
 
 MainWindow::MainWindow(Context &ctx, CameraMgr &cam_mgr, CommMgr &comm_mgr, WorkflowMgr &wf_mgr,
                        QWidget *parent)
@@ -53,11 +54,12 @@ MainWindow::MainWindow(Context &ctx, CameraMgr &cam_mgr, CommMgr &comm_mgr, Work
     // 检测结果 → 刷新相机窗口
     connect(&wf_mgr_, &WorkflowMgr::sign_inspectionDone, this,
             [this](int, const HalconCpp::HObject &display_image,
-                   const HalconCpp::HObject &result_contours,
+                   const HalconCpp::HObject &ok_contours,
+                   const HalconCpp::HObject &ng_contours,
                    const InspectionResult &result)
             {
                 if (camera_view_)
-                    camera_view_->updateFrameWithOverlay(display_image, result_contours, result.pass);
+                    camera_view_->updateFrameWithOverlay(display_image, ok_contours, ng_contours, result.pass);
             });
 }
 
@@ -78,33 +80,42 @@ void MainWindow::on_action_camera_triggered()
     dlg.exec();
 }
 
+void MainWindow::on_action_workflow_triggered()
+{
+    std::array<WorkflowParam, 4> params;
+    for (int i = 0; i < 4; i++)
+        params[i] = ctx_.workflows[i];
+
+    WorkflowConfigDialog dlg(params, this);
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        auto result = dlg.getResult();
+        for (int i = 0; i < 4; i++)
+            wf_mgr_.updateParam(i, result[i]);
+    }
+}
+
 void MainWindow::on_action_open_folder_triggered()
 {
     QString dir = QFileDialog::getExistingDirectory(this, QStringLiteral("选择图片文件夹"));
     if (dir.isEmpty())
         return;
 
-    QDir folder(dir);
-    QStringList filters = {"*.bmp", "*.png", "*.jpg", "*.jpeg", "*.tif", "*.tiff"};
-    auto entries = folder.entryInfoList(filters, QDir::Files, QDir::Name);
-    if (entries.isEmpty())
+    operation_view_->setImageDir(dir);
+
+    if (operation_view_->getImageCount() == 0)
     {
         QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("文件夹中没有找到图片"));
         return;
     }
 
-    std::vector<QString> paths;
-    for (auto &fi : entries)
-        paths.push_back(fi.absoluteFilePath());
-
-    SPDLOG_INFO("Loaded {} offline images from {}", paths.size(), dir.toStdString());
-    operation_view_->setImagePaths(paths);
+    SPDLOG_INFO("Loaded {} offline images from {}", operation_view_->getImageCount(), dir.toStdString());
 }
 
 void MainWindow::initCamera()
 {
     const auto &cam_name = ctx_.camera_params.begin()->second.name;
-    camera_view_ = new CameraWindow(cam_name, cam_mgr_, ui->widget_region_camera);
+    camera_view_ = new CameraWindow(cam_name, cam_mgr_, ctx_.getExecutor(), ui->widget_region_camera);
 
     auto *layout = new QVBoxLayout(ui->widget_region_camera);
     layout->setContentsMargins(4, 4, 4, 4);

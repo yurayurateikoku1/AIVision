@@ -3,6 +3,7 @@
 #include <halconcpp/HalconCpp.h>
 #include <string>
 #include <memory>
+#include <taskflow/taskflow.hpp>
 #include "../camera/camera_interface.h"
 
 class CameraMgr;
@@ -18,7 +19,7 @@ class CameraWindow : public QWidget, public InterfaceCameraCallback
 {
     Q_OBJECT
 public:
-    explicit CameraWindow(const std::string &camera_name, CameraMgr &cam_mgr, QWidget *parent = nullptr);
+    explicit CameraWindow(const std::string &camera_name, CameraMgr &cam_mgr, tf::Executor &executor, QWidget *parent = nullptr);
     ~CameraWindow() override;
 
     void frameReceived(const std::string &camera_name, const HalconCpp::HObject &frame) override;
@@ -28,7 +29,11 @@ public:
     void updateFrame(const HalconCpp::HObject &image);
 
     /// @brief 显示图像并叠加检测结果图形（XLD/Region）
-    void updateFrameWithOverlay(const HalconCpp::HObject &image, const HalconCpp::HObject &contours, bool pass);
+    /// @param show_all true=绿色显示正常+红色显示缺陷, false=仅红色显示缺陷
+    void updateFrameWithOverlay(const HalconCpp::HObject &image,
+                                const HalconCpp::HObject &ok_contours,
+                                const HalconCpp::HObject &ng_contours,
+                                bool show_all = true);
 
     void setStatus(bool online);
 
@@ -69,6 +74,7 @@ private:
     void initHalconWindow();
     void displayImage(const HalconCpp::HObject &image);
     void redisplay();
+    void dispOverlay();
     void resizeEvent(QResizeEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
@@ -76,6 +82,7 @@ private:
 
     Ui::CameraWindow *ui;
     CameraMgr &cam_mgr_;
+    tf::Executor &executor_;
     std::string camera_name_;
     bool maximized_ = false;
 
@@ -83,6 +90,9 @@ private:
     int hwindow_w_ = 0;
     int hwindow_h_ = 0;
     HalconCpp::HObject current_image_;
+    HalconCpp::HObject ok_contours_;   // 正常部件轮廓
+    HalconCpp::HObject ng_contours_;   // 缺陷部件轮廓
+    bool show_all_ = true;             // true=显示全部, false=仅显示缺陷
 
     // 初始 fit-to-window 的 part（用于右键复原）
     HalconCpp::HTuple fit_row1_, fit_col1_, fit_row2_, fit_col2_;
@@ -93,4 +103,5 @@ private:
 
     // 节流：避免高频 redisplay
     bool redisplay_pending_ = false;
+
 };

@@ -70,7 +70,7 @@ void ModbusClientBase::asyncRead(const QModbusDataUnit &unit, readRegistersCallb
         }
         else
         {
-            SPDLOG_ERROR("Modbus {} read error: {}", id_, reply->errorString().toStdString());
+            SPDLOG_DEBUG("Modbus {} read error: {}", id_, reply->errorString().toStdString());
             if (reg_cb)
                 reg_cb(false, {});
             if (coil_cb)
@@ -103,7 +103,7 @@ void ModbusClientBase::asyncRead(const QModbusDataUnit &unit, readRegistersCallb
         }
         else
         {
-            SPDLOG_ERROR("Modbus {} read error: {}", id_, reply->errorString().toStdString());
+            SPDLOG_DEBUG("Modbus {} read error: {}", id_, reply->errorString().toStdString());
             if (reg_cb) reg_cb(false, {});
             if (coil_cb) coil_cb(false, {});
         }

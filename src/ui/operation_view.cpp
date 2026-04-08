@@ -3,6 +3,8 @@
 #include "camera_window.h"
 #include "../context.h"
 #include "../workflow/workflow_mgr.h"
+#include <QDirIterator>
+#include <algorithm>
 #include <spdlog/spdlog.h>
 
 OperationView::OperationView(Context &ctx, WorkflowMgr &wf_mgr, QWidget *parent)
@@ -16,10 +18,17 @@ OperationView::~OperationView()
     delete ui;
 }
 
-void OperationView::setImagePaths(const std::vector<QString> &paths)
+void OperationView::setImageDir(const QString &dir_path, const QStringList &filters)
 {
-    image_paths_ = paths;
+    image_paths_.clear();
     image_index_ = 0;
+
+    QDirIterator it(dir_path, filters, QDir::Files);
+    while (it.hasNext())
+        image_paths_.push_back(it.next());
+
+    std::sort(image_paths_.begin(), image_paths_.end());
+
     if (!image_paths_.empty())
         showCurrentImage();
 }

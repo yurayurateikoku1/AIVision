@@ -1,79 +1,74 @@
 #include "terminal_detector.h"
+#include "detector_registry.h"
+#include "../../config_mgr.h"
 #include "../../ai_infer/postprocess.h"
 #include "../utils.h"
 #include <spdlog/spdlog.h>
 
+// ── 自注册到 DetectorRegistry ───────────────────────────────
+static bool _reg = (DetectorRegistry::registry("Terminal",
+                                               [](const json &j)
+                                               { return std::make_unique<TerminalDetector>(j.get<TerminalParam>()); }),
+                    true);
+
 TerminalDetector::TerminalDetector(const TerminalParam &param)
+    : terminal_param_(param)
 {
-    terminal_param_ = param;
-    if (param.method == DetectMethod::AIInfer)
+    switch (param.method)
     {
+    case DetectMethod::AIInfer:
         yolo_ = std::make_unique<AIInfer::YoloDetector>(param.yolo_settings);
-    }
-    else if (param.method == DetectMethod::MatchTemplate)
-    {
-        const auto &shm_path = param.shape_match_param.model_path;
-        if (!shm_path.empty())
-        {
-            matcher_ = std::make_unique<ShapeMatcher>(param.shape_match_param);
-            try
-            {
-                HalconCpp::HTuple model_id;
-                HalconCpp::ReadShapeModel(shm_path.c_str(), &model_id);
-                matcher_->setModelId(model_id);
-                SPDLOG_INFO("Shape model loaded from {}", shm_path);
-            }
-            catch (HalconCpp::HException &e)
-            {
-                SPDLOG_ERROR("ReadShapeModel failed: {}", e.ErrorMessage().Text());
-                matcher_.reset();
-            }
-        }
+        break;
+    case DetectMethod::MatchTemplate:
+        loadShapeModel(param.shape_match_param);
+        break;
+    default:
+        break;
     }
 }
 
-void TerminalDetector::updateParam(const WorkflowParam &wp)
+void TerminalDetector::updateParam(const json &param)
 {
-    auto *tp = std::get_if<TerminalParam>(&wp.detector_param);
-    if (!tp)
-        return;
-    terminal_param_ = *tp;
+    terminal_param_ = param.get<TerminalParam>();
+    const auto &tp = terminal_param_;
 
-    switch (tp->method)
+    switch (tp.method)
     {
     case DetectMethod::AIInfer:
-    {
         if (!yolo_)
-            yolo_ = std::make_unique<AIInfer::YoloDetector>(tp->yolo_settings);
+            yolo_ = std::make_unique<AIInfer::YoloDetector>(tp.yolo_settings);
         else
         {
-            yolo_->setScoreThreshold(tp->yolo_settings.score_threshold);
-            yolo_->setNmsThreshold(tp->yolo_settings.nms_threshold);
+            yolo_->setScoreThreshold(tp.yolo_settings.score_threshold);
+            yolo_->setNmsThreshold(tp.yolo_settings.nms_threshold);
         }
-    }
+        break;
     case DetectMethod::MatchTemplate:
-    {
-        // 从 .shm 文件加载形状模型
-        const auto &shm_path = tp->shape_match_param.model_path;
-        if (!shm_path.empty())
-        {
-            matcher_ = std::make_unique<ShapeMatcher>(tp->shape_match_param);
-            try
-            {
-                HalconCpp::HTuple model_id;
-                HalconCpp::ReadShapeModel(shm_path.c_str(), &model_id);
-                matcher_->setModelId(model_id);
-                SPDLOG_INFO("Shape model loaded from {}", shm_path);
-            }
-            catch (HalconCpp::HException &e)
-            {
-                SPDLOG_ERROR("ReadShapeModel failed: {}", e.ErrorMessage().Text());
-                matcher_.reset();
-            }
-        }
-    }
+        loadShapeModel(tp.shape_match_param);
+        break;
     default:
         break;
+    }
+}
+
+void TerminalDetector::loadShapeModel(const ShapeMatchParam &param)
+{
+    const auto &path = param.model_path;
+    if (path.empty())
+        return;
+
+    matcher_ = std::make_unique<ShapeMatcher>(param);
+    try
+    {
+        HalconCpp::HTuple model_id;
+        HalconCpp::ReadShapeModel(path.c_str(), &model_id);
+        matcher_->setModelId(model_id);
+        SPDLOG_INFO("Shape model loaded from {}", path);
+    }
+    catch (HalconCpp::HException &e)
+    {
+        SPDLOG_ERROR("ReadShapeModel failed: {}", e.ErrorMessage().Text());
+        matcher_.reset();
     }
 }
 
@@ -81,38 +76,60 @@ void TerminalDetector::detect(NodeContext &ctx)
 {
     SPDLOG_INFO("TerminalDetector detect start");
 
+    ctx.result.pass = true;
+    HalconCpp::GenEmptyObj(&ctx.ok_contours);
+    HalconCpp::GenEmptyObj(&ctx.ng_contours);
+
     switch (terminal_param_.method)
     {
     case DetectMethod::AIInfer:
-        detectAI(ctx);
+        runAI(ctx);
         break;
     case DetectMethod::MatchTemplate:
-        detectShapeMatch(ctx);
+        runShapeMatch(ctx);
         break;
+    }
+
+    if (!ctx.result.pass)
+    {
+        for (const auto &d : ctx.result.defects)
+            SPDLOG_WARN("Defect: cls={}", d.defect_id);
     }
 
     SPDLOG_INFO("TerminalDetector detect end");
 }
 
-void TerminalDetector::detectAI(NodeContext &ctx)
+void TerminalDetector::checkCount(int actual, NodeContext &ctx)
+{
+    if (terminal_param_.count_TERM > 0 && actual != terminal_param_.count_TERM)
+    {
+        ctx.result.pass = false;
+        ctx.result.defects.push_back({static_cast<int>(TermPartCls::TERM), {}});
+    }
+}
+
+void TerminalDetector::runAI(NodeContext &ctx)
 {
     auto det_result = yolo_->detect(ctx.src_image);
-
-    // 按 cls==0 锚框分组，其他类别为部件
     auto groups = std::visit([](auto &dets)
                              { return AIInfer::PostProcessor::groupDetections(dets); }, det_result);
 
-    std::vector<TerminalResult> terminal_results;
-    terminal_results.reserve(groups.size());
+    const auto &p = terminal_param_;
+    checkCount(static_cast<int>(groups.size()), ctx);
 
-    HalconCpp::HObject all_contours;
-    HalconCpp::GenEmptyObj(&all_contours);
+    auto isPartOk = [&](TermPartCls cls, int area) -> bool
+    {
+        auto it = p.part_inspectors.find(static_cast<int>(cls));
+        if (it == p.part_inspectors.end() || !it->second.enabled)
+            return true;
+        const auto *bp = std::get_if<BlobInspectParam>(&it->second.param);
+        if (bp)
+            return area >= bp->area_min && area <= bp->area_max;
+        return true;
+    };
 
     for (const auto &group : groups)
     {
-        TerminalResult tr;
-        tr.id = group.id;
-
         std::visit([&](const auto &dets)
                    {
             for (const auto &det : dets)
@@ -124,51 +141,15 @@ void TerminalDetector::detectAI(NodeContext &ctx)
                         return det;
                 }();
 
-                TerminalPart part;
-                part.part_id = box.cls;
-                part.confidence = box.conf;
-                part.x = static_cast<float>(box.box.x);
-                part.y = static_cast<float>(box.box.y);
-                part.width = static_cast<float>(box.box.width);
-                part.height = static_cast<float>(box.box.height);
-                tr.parts.push_back(part);
-
+                auto cls = static_cast<TermPartCls>(box.cls);
+                int area = box.box.width * box.box.height;
                 HalconCpp::HObject contour = utils::genBoxContourXld(det);
-                HalconCpp::ConcatObj(all_contours, contour, &all_contours);
+                utils::recordResult(isPartOk(cls, area), cls, contour, ctx);
             } }, group.dets);
-
-        terminal_results.push_back(tr);
-    }
-
-    ctx.result_contours = all_contours;
-    ctx.result.detector_result = std::move(terminal_results);
-
-    // 判定：端子数量 + 部件完整性
-    auto &results_ref = std::get<std::vector<TerminalResult>>(ctx.result.detector_result);
-    int expected = terminal_param_.count;
-    int expected_parts = terminal_param_.parts_per_terminal;
-    bool pass = (expected <= 0) || (static_cast<int>(results_ref.size()) == expected);
-    if (pass && expected_parts > 0)
-    {
-        for (const auto &tr : results_ref)
-        {
-            if (!tr.is_complete(expected_parts))
-            {
-                pass = false;
-                break;
-            }
-        }
-    }
-    ctx.result.pass = pass;
-
-    if (!pass)
-    {
-        SPDLOG_WARN("AI detect: expected {} terminals with {} parts each, got {} terminals",
-                    expected, terminal_param_.parts_per_terminal, results_ref.size());
     }
 }
 
-void TerminalDetector::detectShapeMatch(NodeContext &ctx)
+void TerminalDetector::runShapeMatch(NodeContext &ctx)
 {
     if (!matcher_ || !matcher_->isValid())
     {
@@ -177,43 +158,14 @@ void TerminalDetector::detectShapeMatch(NodeContext &ctx)
         return;
     }
 
-    ShapeMatchResult match_result;
-    bool found = matcher_->match(ctx.src_image, match_result);
+    ShapeMatchResult mr{};
+    matcher_->match(ctx.src_image, mr);
+    ctx.result.detector_result = mr;
 
-    int expected = terminal_param_.count;
-    ctx.result.pass = (expected <= 0) || (match_result.count() == expected);
-    ctx.result.detector_result = match_result;
+    checkCount(mr.count(), ctx);
+    utils::dispMatchOverlay(*matcher_, terminal_param_.shape_match_param, mr, ctx.ok_contours);
 
-    // 获取模型轮廓，仿射变换到每个匹配位置
-    HalconCpp::HObject all_contours;
-    HalconCpp::GenEmptyObj(&all_contours);
-
-    HalconCpp::HObject model_contours;
-    HalconCpp::GetShapeModelContours(&model_contours, matcher_->getModelId(), 1);
-
-    for (int i = 0; i < match_result.count(); i++)
-    {
-        // 构造仿射矩阵：缩放 + 旋转 + 平移
-        HalconCpp::HTuple homo;
-        HalconCpp::HomMat2dIdentity(&homo);
-        HalconCpp::HomMat2dScale(homo,
-                                 match_result.scale[i], match_result.scale[i],
-                                 0, 0, &homo);
-        HalconCpp::HomMat2dRotate(homo,
-                                  match_result.angle[i],
-                                  0, 0, &homo);
-        HalconCpp::HomMat2dTranslate(homo,
-                                     match_result.row[i], match_result.col[i],
-                                     &homo);
-
-        HalconCpp::HObject transformed;
-        HalconCpp::AffineTransContourXld(model_contours, &transformed, homo);
-        HalconCpp::ConcatObj(all_contours, transformed, &all_contours);
-    }
-    ctx.result_contours = all_contours;
-
-    if (!ctx.result.pass)
-    {
-        SPDLOG_WARN("Shape match: expected {} matches, got {}", expected, match_result.count());
-    }
+    for (int i = 0; i < mr.count(); i++)
+        utils::runPartChecks(*matcher_, terminal_param_.part_inspectors,
+                             ctx.src_image, mr, i, ctx);
 }

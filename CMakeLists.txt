@@ -15,7 +15,7 @@ list(PREPEND CMAKE_PREFIX_PATH
     "D:/C++Libs/json-3.12.0/build/install/share/cmake/nlohmann_json"
     "D:/C++Libs/openvino_toolkit_windows_2026.0.0.20965.c6d6a13a886_x86_64/runtime/cmake"
     "D:/C++Libs/opencv-4.12/build/x64/vc16/lib"
-    "D:/C++Libs/boost_1_90_0/lib64-msvc-14.3/cmake"
+    # "D:/C++Libs/boost_1_90_0/lib64-msvc-14.3/cmake"
 )
 
 if(MSVC)
@@ -80,7 +80,7 @@ set(PROJECT_SOURCES
     src/algorithm/utils.h 
     src/algorithm/shape_match.h src/algorithm/shape_match.cpp
     src/algorithm/product_class/terminal_detector.h src/algorithm/product_class/terminal_detector.cpp
-    src/algorithm/product_class/detector_factory.h     src/algorithm/product_class/interface_detector.h
+    src/algorithm/product_class/detector_factory.h     src/algorithm/product_class/interface_detector.h     src/algorithm/product_class/detector_registry.h
 
     #ui
     src/ui/main_window.cpp src/ui/main_window.h src/ui/main_window.ui
@@ -94,7 +94,7 @@ set(PROJECT_SOURCES
 
     src/ui/product_class/terminal_param_widget.cpp src/ui/product_class/terminal_param_widget.h src/ui/product_class/terminal_param_dialog.ui
     src/ui/product_class/detector_param_widget_factory.h
-    src/ui/workflow_config_dialog.cpp src/ui/workflow_config_dialog.h src/ui/workflow_config_dialog.ui
+    src/ui/param/workflow_config_dialog.cpp src/ui/param/workflow_config_dialog.h src/ui/param/workflow_config_dialog.ui
 )
 
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)

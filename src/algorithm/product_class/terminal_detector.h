@@ -4,18 +4,19 @@
 #include "../shape_match.h"
 #include <memory>
 
-/// @brief 端子检测器
+/// @brief 端子检测器（通过 DetectorRegistry 自注册，type = "Terminal"）
 class TerminalDetector : public InterfaceDetector
 {
 public:
     explicit TerminalDetector(const TerminalParam &param);
     void detect(NodeContext &ctx) override;
-    void updateParam(const WorkflowParam &wp) override;
+    void updateParam(const json &param) override;
 
 private:
-    void detectAI(NodeContext &ctx);
-
-    void detectShapeMatch(NodeContext &ctx);
+    void runAI(NodeContext &ctx);
+    void runShapeMatch(NodeContext &ctx);
+    void checkCount(int actual, NodeContext &ctx);
+    void loadShapeModel(const ShapeMatchParam &param);
 
     TerminalParam terminal_param_;
     std::unique_ptr<AIInfer::YoloDetector> yolo_;

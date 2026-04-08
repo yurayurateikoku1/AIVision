@@ -116,6 +116,7 @@ background-color: #edf1f7;</string>
     </property>
     <addaction name="action_parameter"/>
     <addaction name="action_camera"/>
+    <addaction name="action_workflow"/>
    </widget>
    <widget class="QMenu" name="menu_user">
     <property name="minimumSize">
@@ -193,6 +194,15 @@ background-color: #edf1f7;</string>
    </property>
    <property name="text">
     <string>打开文件夹</string>
+   </property>
+  </action>
+  <action name="action_workflow">
+   <property name="icon">
+    <iconset resource="../../resource.qrc">
+     <normaloff>:/assets/workflow.png</normaloff>:/assets/workflow.png</iconset>
+   </property>
+   <property name="text">
+    <string>Workflow参数</string>
    </property>
   </action>
  </widget>

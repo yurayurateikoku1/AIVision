@@ -26,7 +26,7 @@ void Pipeline::onParamUpdated(const WorkflowParam &new_param)
 {
     param_ = new_param;
     if (detector_)
-        detector_->updateParam(param_);
+        detector_->updateParam(param_.detector_param);
 }
 
 void Pipeline::onIOUpdate(bool current_di, std::chrono::steady_clock::time_point now)
@@ -185,7 +185,10 @@ void Pipeline::runInspection()
         if (!cam || !cam->grabOne(ctx.src_image))
         {
             SPDLOG_ERROR("Pipeline DI{}: capture failed", param_.di_index);
-            state_ = State::IDLE;
+            // bug fix: 采集失败也推进状态机，避免卡在 INSPECTING
+            last_result_pass_ = false;
+            QMetaObject::invokeMethod(this, [this]()
+                                      { dispatch(Event::INSPECT_DONE); }, Qt::QueuedConnection);
             return;
         }
         ctx.display_image = ctx.src_image;
@@ -200,7 +203,8 @@ void Pipeline::runInspection()
         detector_->detect(ctx);
 
     // 轮廓坐标偏移回全图
-    utils::offsetContours(ctx.result_contours, param_.roi);
+    utils::offsetContours(ctx.ok_contours, param_.roi);
+    utils::offsetContours(ctx.ng_contours, param_.roi);
 
     // 时间戳
     auto now = std::chrono::system_clock::now();
@@ -216,7 +220,7 @@ void Pipeline::runInspection()
     }
 
     last_result_pass_ = ctx.result.pass;
-    emit sign_inspectionDone(param_.di_index, ctx.display_image, ctx.result_contours, ctx.result);
+    emit sign_inspectionDone(param_.di_index, ctx.display_image, ctx.ok_contours, ctx.ng_contours, ctx.result);
 
     // 回主线程推进状态机
     QMetaObject::invokeMethod(this, [this]()

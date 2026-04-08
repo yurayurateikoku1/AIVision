@@ -3,6 +3,8 @@
 #include "modbus_rtu_client.h"
 #include <spdlog/spdlog.h>
 
+///   - io_timer_    (20ms)  ：轮询 Modbus DI/DO 线圈状态
+///   - conn_timer_  (3000ms)：检测 Modbus 连接状态并自动重连，同时监控光源串口
 CommMgr::CommMgr(QObject *parent)
     : QObject(parent)
 {
@@ -27,6 +29,8 @@ CommMgr::CommMgr(QObject *parent)
 
 CommMgr::~CommMgr() = default;
 
+/// 安全关闭子线程：停止定时器、断开所有 Modbus 连接、关闭光源串口，
+/// 然后退出事件循环并等待线程结束。必须在 QApplication 退出前调用。
 void CommMgr::shutdown()
 {
     if (!worker_thread_.isRunning())
@@ -47,6 +51,8 @@ void CommMgr::shutdown()
     SPDLOG_INFO("CommManager thread clearn");
 }
 
+/// 根据配置创建 ModbusTCP/RTU 客户端并尝试连接。
+/// 无论连接成功与否都会保存到 comms_，以便后续重连。
 void CommMgr::addComm(const CommunicationParam &config)
 {
     if (comms_.count(config.name))
@@ -82,6 +88,7 @@ void CommMgr::addComm(const CommunicationParam &config)
     }
 }
 
+/// 断开旧连接并以新配置重建（用于运行时切换协议或地址）
 void CommMgr::switchComm(const CommunicationParam &config)
 {
     auto it = comms_.find(config.name);
@@ -96,6 +103,7 @@ void CommMgr::switchComm(const CommunicationParam &config)
                 config.protocol == CommProtocol::ModbusTCP ? "TCP" : "RTU");
 }
 
+/// 停止所有定时器、断开全部 Modbus 连接并关闭光源串口
 void CommMgr::disconnectAll()
 {
     if (io_timer_)
@@ -109,6 +117,7 @@ void CommMgr::disconnectAll()
         light_ctrl_->close();
 }
 
+/// 向指定 Modbus 设备写入单个线圈（DO），未连接时跳过并警告
 void CommMgr::writeSingleCoil(const std::string &comm_name, uint16_t addr, bool value)
 {
     auto it = comms_.find(comm_name);
@@ -120,6 +129,7 @@ void CommMgr::writeSingleCoil(const std::string &comm_name, uint16_t addr, bool 
     it->second->writeSingleCoil(addr, value);
 }
 
+/// 向指定 Modbus 设备写入多个保持寄存器，未连接时跳过并警告
 void CommMgr::writeMultipleRegisters(const std::string &comm_name, uint16_t addr, const std::vector<uint16_t> &values)
 {
     auto it = comms_.find(comm_name);
@@ -131,6 +141,7 @@ void CommMgr::writeMultipleRegisters(const std::string &comm_name, uint16_t addr
     it->second->writeMultipleRegisters(addr, values);
 }
 
+/// 打开光源控制器串口，保存端口参数以便断线重连
 void CommMgr::openLightSerial(const std::string &port, int baud_rate)
 {
     light_port_ = port;
@@ -168,6 +179,8 @@ bool CommMgr::isCommConnected(const std::string &name) const
 
 // ── 子线程定时器槽 ──
 
+/// 20ms 周期轮询：读取第一个 Modbus 设备的 8 路 DI 和 8 路 DO 线圈状态，
+/// 更新 di_state_/do_state_ 并发射 sign_ioStateUpdated 通知上层。
 void CommMgr::slot_refreshIO()
 {
     auto it = comms_.begin();
@@ -197,9 +210,10 @@ void CommMgr::slot_refreshIO()
         emit sign_ioStateUpdated(); });
 }
 
+/// 3s 周期检测：遍历所有 Modbus 连接，汇报状态并自动重连；
+/// 同时检测光源串口是否断开，断开则尝试重连。
 void CommMgr::slot_checkConnection()
 {
-    // Modbus：每次都汇报实际连接状态，断线时尝试重连
     for (auto &[name, comm] : comms_)
     {
         bool connected = comm->isConnected();

@@ -93,11 +93,11 @@ void from_json(const json &j, CameraControlParam &p)
 // RoiParam
 void to_json(json &j, const RoiParam &p)
 {
-    j = json{{"enabled", p.enabled}, {"row1", p.row1}, {"col1", p.col1}, {"row2", p.row2}, {"col2", p.col2}};
+    j = json{{"enabled", p.enable_roi}, {"row1", p.row1}, {"col1", p.col1}, {"row2", p.row2}, {"col2", p.col2}};
 }
 void from_json(const json &j, RoiParam &p)
 {
-    j.at("enabled").get_to(p.enabled);
+    j.at("enabled").get_to(p.enable_roi);
     j.at("row1").get_to(p.row1);
     j.at("col1").get_to(p.col1);
     j.at("row2").get_to(p.row2);
@@ -107,7 +107,15 @@ void from_json(const json &j, RoiParam &p)
 // ShapeMatchParam
 void to_json(json &j, const ShapeMatchParam &p)
 {
-    j = json{{"angle_start", p.angle_start}, {"angle_extent", p.angle_extent}, {"angle_step", p.angle_step}, {"scale_min", p.scale_min}, {"scale_max", p.scale_max}, {"scale_step", p.scale_step}, {"min_score", p.min_score}, {"num_matches", p.num_matches}, {"max_overlap", p.max_overlap}, {"greediness", p.greediness}, {"num_levels", p.num_levels}, {"metric", p.metric}, {"template_image_path", p.template_image_path}, {"model_path", p.model_path}};
+    j = json{
+        {"angle_start", p.angle_start}, {"angle_extent", p.angle_extent}, {"angle_step", p.angle_step},
+        {"scale_min", p.scale_min}, {"scale_max", p.scale_max}, {"scale_step", p.scale_step},
+        {"min_score", p.min_score}, {"num_matches", p.num_matches}, {"max_overlap", p.max_overlap},
+        {"greediness", p.greediness}, {"num_levels", p.num_levels}, {"metric", p.metric},
+        {"template_image_path", p.template_image_path}, {"model_path", p.model_path},
+        {"model_origin_row", p.model_origin_row}, {"model_origin_col", p.model_origin_col},
+        {"display_rect", p.display_rect}, {"display_contour", p.display_contour}, {"display_center", p.display_center},
+    };
 }
 void from_json(const json &j, ShapeMatchParam &p)
 {
@@ -125,6 +133,11 @@ void from_json(const json &j, ShapeMatchParam &p)
     j.at("metric").get_to(p.metric);
     j.at("template_image_path").get_to(p.template_image_path);
     j.at("model_path").get_to(p.model_path);
+    if (j.contains("model_origin_row")) j.at("model_origin_row").get_to(p.model_origin_row);
+    if (j.contains("model_origin_col")) j.at("model_origin_col").get_to(p.model_origin_col);
+    if (j.contains("display_rect")) j.at("display_rect").get_to(p.display_rect);
+    if (j.contains("display_contour")) j.at("display_contour").get_to(p.display_contour);
+    if (j.contains("display_center")) j.at("display_center").get_to(p.display_center);
 }
 
 // AIInfer::YOLOSettings（必须在 AIInfer 命名空间内）
@@ -148,34 +161,117 @@ namespace AIInfer
     }
 }
 
+// PartRoi
+void to_json(json &j, const PartRoi &r)
+{
+    j = json{{"row1", r.row1}, {"col1", r.col1}, {"row2", r.row2}, {"col2", r.col2}};
+}
+void from_json(const json &j, PartRoi &r)
+{
+    j.at("row1").get_to(r.row1);
+    j.at("col1").get_to(r.col1);
+    j.at("row2").get_to(r.row2);
+    j.at("col2").get_to(r.col2);
+}
+
+// BlobInspectParam
+void to_json(json &j, const BlobInspectParam &p)
+{
+    j = json{{"threshold", p.threshold}, {"area_min", p.area_min}, {"area_max", p.area_max}};
+}
+void from_json(const json &j, BlobInspectParam &p)
+{
+    if (j.contains("threshold")) j.at("threshold").get_to(p.threshold);
+    if (j.contains("area_min")) j.at("area_min").get_to(p.area_min);
+    if (j.contains("area_max")) j.at("area_max").get_to(p.area_max);
+}
+
+// MeasureInspectParam
+void to_json(json &j, const MeasureInspectParam &p)
+{
+    j = json{{"contrast_min", p.contrast_min}, {"contrast_max", p.contrast_max},
+             {"feature_limit", p.feature_limit}, {"check_ge", p.check_ge}};
+}
+void from_json(const json &j, MeasureInspectParam &p)
+{
+    if (j.contains("contrast_min")) j.at("contrast_min").get_to(p.contrast_min);
+    if (j.contains("contrast_max")) j.at("contrast_max").get_to(p.contrast_max);
+    if (j.contains("feature_limit")) j.at("feature_limit").get_to(p.feature_limit);
+    if (j.contains("check_ge")) j.at("check_ge").get_to(p.check_ge);
+}
+
+// PartInspector
+void to_json(json &j, const PartInspector &p)
+{
+    j = json{{"enabled", p.enabled}, {"roi", p.roi}};
+    std::visit([&](const auto &param)
+    {
+        using T = std::decay_t<decltype(param)>;
+        if constexpr (std::is_same_v<T, BlobInspectParam>)
+        {
+            j["method"] = "BLOB";
+            j["param"] = param;
+        }
+        else
+        {
+            j["method"] = "MEASURE";
+            j["param"] = param;
+        }
+    }, p.param);
+}
+void from_json(const json &j, PartInspector &p)
+{
+    if (j.contains("enabled")) j.at("enabled").get_to(p.enabled);
+    if (j.contains("roi")) j.at("roi").get_to(p.roi);
+
+    std::string method = j.value("method", "BLOB");
+    if (method == "MEASURE")
+        p.param = j.contains("param") ? j.at("param").get<MeasureInspectParam>() : MeasureInspectParam{};
+    else
+        p.param = j.contains("param") ? j.at("param").get<BlobInspectParam>() : BlobInspectParam{};
+}
+
 // TerminalParam
 void to_json(json &j, const TerminalParam &p)
 {
-    j = json{{"method", p.method}, {"yolo_settings", p.yolo_settings}, {"shape_match_param", p.shape_match_param}, {"count", p.count}, {"parts_per_terminal", p.parts_per_terminal}};
+    j = json{
+        {"method", p.method}, {"yolo_settings", p.yolo_settings},
+        {"shape_match_param", p.shape_match_param},
+        {"count", p.count_TERM}, {"parts_per_terminal", p.parts_per_terminal},
+    };
+    // part_inspectors: map<int, PartInspector> → json object (key 转字符串)
+    json inspectors;
+    for (auto &[cls, insp] : p.part_inspectors)
+        inspectors[std::to_string(cls)] = insp;
+    j["part_inspectors"] = inspectors;
 }
 void from_json(const json &j, TerminalParam &p)
 {
     j.at("method").get_to(p.method);
     j.at("yolo_settings").get_to(p.yolo_settings);
     j.at("shape_match_param").get_to(p.shape_match_param);
-    j.at("count").get_to(p.count);
+    j.at("count").get_to(p.count_TERM);
     j.at("parts_per_terminal").get_to(p.parts_per_terminal);
+
+    if (j.contains("part_inspectors"))
+    {
+        p.part_inspectors.clear();
+        for (auto &[key, val] : j["part_inspectors"].items())
+            p.part_inspectors[std::stoi(key)] = val.get<PartInspector>();
+    }
 }
 
-// WorkflowParam（variant 手动处理）
+// WorkflowParam
 void to_json(json &j, const WorkflowParam &p)
 {
-    j = json{{"di_index", p.di_index}, {"enabled", p.enabled}, {"do_ok_addr", p.do_ok_addr}, {"do_ng_addr", p.do_ng_addr}, {"result_hold_ms", p.result_hold_ms}, {"delay_ms", p.delay_ms}, {"exposure_override", p.exposure_override}, {"roi", p.roi}};
-
-    if (auto *tp = std::get_if<TerminalParam>(&p.detector_param))
-    {
-        j["detector_type"] = "Terminal";
-        j["detector_param"] = *tp;
-    }
-    else
-    {
-        j["detector_type"] = "none";
-    }
+    j = json{
+        {"di_index", p.di_index}, {"enabled", p.enabled},
+        {"do_ok_addr", p.do_ok_addr}, {"do_ng_addr", p.do_ng_addr},
+        {"result_hold_ms", p.result_hold_ms}, {"delay_ms", p.delay_ms},
+        {"exposure_override", p.exposure_override}, {"roi", p.roi},
+        {"detector_type", p.detector_type},
+        {"detector_param", p.detector_param},
+    };
 }
 void from_json(const json &j, WorkflowParam &p)
 {
@@ -188,11 +284,11 @@ void from_json(const json &j, WorkflowParam &p)
     j.at("exposure_override").get_to(p.exposure_override);
     j.at("roi").get_to(p.roi);
 
-    std::string det_type = j.value("detector_type", "none");
-    if (det_type == "Terminal")
-        p.detector_param = j.at("detector_param").get<TerminalParam>();
+    p.detector_type = j.value("detector_type", "");
+    if (j.contains("detector_param"))
+        p.detector_param = j["detector_param"];
     else
-        p.detector_param = std::monostate{};
+        p.detector_param = json{};
 }
 
 // ── ConfigMgr 实现 ───────────────────────────────────────────

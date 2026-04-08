@@ -1,7 +1,6 @@
 #include "camera_window.h"
 #include "ui_camera_window.h"
 #include <QResizeEvent>
-#include <QMouseEvent>
 #include <QWheelEvent>
 #include <QTimer>
 #include <thread>
@@ -9,8 +8,8 @@
 #include "../camera/camera_mgr.h"
 #include "../context.h"
 
-CameraWindow::CameraWindow(const std::string &camera_name, CameraMgr &cam_mgr, QWidget *parent)
-    : QWidget(parent), ui(new Ui::CameraWindow), cam_mgr_(cam_mgr), camera_name_(camera_name)
+CameraWindow::CameraWindow(const std::string &camera_name, CameraMgr &cam_mgr, tf::Executor &executor, QWidget *parent)
+    : QWidget(parent), ui(new Ui::CameraWindow), cam_mgr_(cam_mgr), executor_(executor), camera_name_(camera_name)
 {
     ui->setupUi(this);
 
@@ -23,7 +22,6 @@ CameraWindow::CameraWindow(const std::string &camera_name, CameraMgr &cam_mgr, Q
     ui->widget_window->setMinimumSize(320, 240);
     ui->widget_window->setStyleSheet("background-color: #1e1e1e;");
     ui->widget_window->setAttribute(Qt::WA_NativeWindow);
-    ui->widget_window->setMouseTracking(true);
     ui->widget_window->installEventFilter(this);
 
     // 监听相机在线状态，自行更新状态显示和回调注册
@@ -67,24 +65,47 @@ void CameraWindow::errorMsgReceived(const std::string &camera_name, int error_co
 void CameraWindow::updateFrame(const HalconCpp::HObject &image)
 {
     current_image_ = image;
+    ok_contours_ = HalconCpp::HObject();
+    ng_contours_ = HalconCpp::HObject();
     displayImage(current_image_);
 }
 
-void CameraWindow::updateFrameWithOverlay(const HalconCpp::HObject &image, const HalconCpp::HObject &contours, bool pass)
+void CameraWindow::updateFrameWithOverlay(const HalconCpp::HObject &image,
+                                           const HalconCpp::HObject &ok_contours,
+                                           const HalconCpp::HObject &ng_contours,
+                                           bool show_all)
 {
     current_image_ = image;
+    ok_contours_ = ok_contours;
+    ng_contours_ = ng_contours;
+    show_all_ = show_all;
     displayImage(current_image_);
-    setResult(pass);
+    setResult(!ng_contours.IsInitialized());
+    dispOverlay();
+}
 
-    if (!hwindow_ || !contours.IsInitialized())
+void CameraWindow::dispOverlay()
+{
+    if (!hwindow_)
         return;
-
     try
     {
-        hwindow_->SetColor(pass ? "green" : "red");
         hwindow_->SetDraw("margin");
         hwindow_->SetLineWidth(2);
-        hwindow_->DispObj(contours);
+
+        // 绿色显示正常部件
+        if (show_all_ && ok_contours_.IsInitialized())
+        {
+            hwindow_->SetColor("green");
+            hwindow_->DispObj(ok_contours_);
+        }
+
+        // 红色显示缺陷部件
+        if (ng_contours_.IsInitialized())
+        {
+            hwindow_->SetColor("red");
+            hwindow_->DispObj(ng_contours_);
+        }
     }
     catch (const HalconCpp::HException &e)
     {
@@ -211,19 +232,42 @@ void CameraWindow::redisplay()
     if (redisplay_pending_)
         return;
     redisplay_pending_ = true;
-    QTimer::singleShot(200, this, [this]()
+    QTimer::singleShot(30, this, [this]()
                        {
         redisplay_pending_ = false;
         if (!hwindow_ || !current_image_.IsInitialized())
             return;
         try
         {
-            // 从 HWindow 读取当前 part，直接用
             HalconCpp::HTuple r1, c1, r2, c2;
             hwindow_->GetPart(&r1, &c1, &r2, &c2);
+
+            // 裁剪可见区域再显示，避免 DispObj 渲染全图
+            HalconCpp::HTuple img_w, img_h;
+            HalconCpp::GetImageSize(current_image_, &img_w, &img_h);
+
+            // clamp 到图像边界
+            int cr1 = std::max(0, static_cast<int>(r1.D()));
+            int cc1 = std::max(0, static_cast<int>(c1.D()));
+            int cr2 = std::min(img_h.I() - 1, static_cast<int>(r2.D()));
+            int cc2 = std::min(img_w.I() - 1, static_cast<int>(c2.D()));
+
             hwindow_->ClearWindow();
             hwindow_->SetPart(r1, c1, r2, c2);
-            hwindow_->DispObj(current_image_);
+
+            if (cr2 > cr1 && cc2 > cc1)
+            {
+                // 只裁剪 domain（不改坐标原点），减少渲染像素量
+                HalconCpp::HObject region, reduced;
+                HalconCpp::GenRectangle1(&region, cr1, cc1, cr2, cc2);
+                HalconCpp::ReduceDomain(current_image_, region, &reduced);
+                hwindow_->DispObj(reduced);
+            }
+            else
+            {
+                hwindow_->DispObj(current_image_);
+            }
+            dispOverlay();
         }
         catch (HalconCpp::HException &e)
         {
@@ -235,61 +279,6 @@ bool CameraWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj != ui->widget_window || !hwindow_ || !current_image_.IsInitialized())
         return QWidget::eventFilter(obj, event);
-
-    if (event->type() == QEvent::MouseMove)
-    {
-        auto *me = static_cast<QMouseEvent *>(event);
-        try
-        {
-            // Halcon 坐标转换：窗口像素 → 图像坐标
-            HalconCpp::HTuple img_row, img_col;
-            hwindow_->ConvertCoordinatesWindowToImage(
-                me->pos().y(), me->pos().x(), &img_row, &img_col);
-
-            double r = img_row.D(), c = img_col.D();
-
-            HalconCpp::HTuple img_w, img_h;
-            HalconCpp::GetImageSize(current_image_, &img_w, &img_h);
-
-            if (r >= 0 && r < img_h.D() && c >= 0 && c < img_w.D())
-            {
-                ui->label_coordinates->setText(
-                    QStringLiteral("(%1, %2)").arg(static_cast<int>(c)).arg(static_cast<int>(r)));
-
-                // 灰度值（支持单通道和三通道）
-                HalconCpp::HTuple channels;
-                HalconCpp::CountChannels(current_image_, &channels);
-                int row_i = static_cast<int>(r), col_i = static_cast<int>(c);
-
-                if (channels.I() == 1)
-                {
-                    HalconCpp::HTuple val;
-                    HalconCpp::GetGrayval(current_image_, row_i, col_i, &val);
-                    ui->label_grayscale->setText(QString::number(val.I()));
-                }
-                else
-                {
-                    HalconCpp::HObject ch1, ch2, ch3;
-                    HalconCpp::Decompose3(current_image_, &ch1, &ch2, &ch3);
-                    HalconCpp::HTuple v1, v2, v3;
-                    HalconCpp::GetGrayval(ch1, row_i, col_i, &v1);
-                    HalconCpp::GetGrayval(ch2, row_i, col_i, &v2);
-                    HalconCpp::GetGrayval(ch3, row_i, col_i, &v3);
-                    ui->label_grayscale->setText(
-                        QStringLiteral("[%1,%2,%3]").arg(v1.I()).arg(v2.I()).arg(v3.I()));
-                }
-            }
-            else
-            {
-                ui->label_coordinates->setText("");
-                ui->label_grayscale->setText("");
-            }
-        }
-        catch (...)
-        {
-        }
-        return true;
-    }
 
     if (event->type() == QEvent::Wheel)
     {
@@ -390,8 +379,7 @@ void CameraWindow::enterRoiMode()
     if (!hwindow_)
         return;
 
-    // DrawRectangle1 是阻塞调用，放到独立线程执行
-    std::thread([this]()
+    executor_.silent_async([this]()
                 {
         try
         {
@@ -402,6 +390,8 @@ void CameraWindow::enterRoiMode()
                     redisplay();
             }, Qt::BlockingQueuedConnection);
 
+            hwindow_->SetColor("blue");
+            hwindow_->SetLineWidth(2);
             double r1, c1, r2, c2;
             hwindow_->DrawRectangle1(&r1, &c1, &r2, &c2);
             QMetaObject::invokeMethod(this, [this, r1, c1, r2, c2]()
@@ -416,6 +406,5 @@ void CameraWindow::enterRoiMode()
                 emit sign_roiSelected(r1, c1, r2, c2);
             }, Qt::QueuedConnection);
         }
-        catch (...) {} })
-        .detach();
+        catch (...) {} });
 }

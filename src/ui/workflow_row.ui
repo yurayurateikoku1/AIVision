@@ -92,7 +92,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pushButton_config">
+    <widget class="QPushButton" name="pushButton_detector">
      <property name="maximumSize">
       <size>
        <width>48</width>
@@ -100,7 +100,7 @@
       </size>
      </property>
      <property name="text">
-      <string>配置</string>
+      <string>检测器</string>
      </property>
     </widget>
    </item>

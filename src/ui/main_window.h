@@ -27,6 +27,7 @@ public:
 private slots:
     void on_action_parameter_triggered();
     void on_action_camera_triggered();
+    void on_action_workflow_triggered();
     void on_action_open_folder_triggered();
 
 private:

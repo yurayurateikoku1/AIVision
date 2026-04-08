@@ -43,17 +43,23 @@ public:
     void rebuildDetector(int di_index);
 
 signals:
+
+    /// @brief 发送检测结果
     void sign_inspectionDone(int di_index,
                              const HalconCpp::HObject &display_image,
-                             const HalconCpp::HObject &result_contours,
+                             const HalconCpp::HObject &ok_contours,
+                             const HalconCpp::HObject &ng_contours,
                              const InspectionResult &result);
+    /// @brief 发送运行状态
     void sign_runningChanged(bool running);
 
 public slots:
-    /// @brief 帧到达（所有 Pipeline 共享同一个相机）
+
+    /// @brief 处理帧到达,所有 Pipeline 共享同一个相机缓存
     void slot_frameArrived(const HalconCpp::HObject &frame);
 
 private slots:
+    /// @brief 处理 IO 更新
     void slot_onIOStateUpdated();
 
 private:
@@ -63,5 +69,5 @@ private:
     tf::Executor &executor_;
 
     std::array<std::unique_ptr<Pipeline>, 4> pipelines_;
-    std::atomic<bool> running_{false};
+    std::atomic<bool> running_{false}; //< 自动检测状态
 };

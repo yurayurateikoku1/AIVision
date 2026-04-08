@@ -3,7 +3,7 @@
 #include "common.h"
 #include <string>
 
-// ── JSON 序列化声明 ──────────────────────────────────────────
+// JSON 序列化声明
 
 void to_json(json &j, const LightControlParam &p);
 void from_json(const json &j, LightControlParam &p);
@@ -22,9 +22,12 @@ void from_json(const json &j, ShapeMatchParam &p);
 
 namespace AIInfer
 {
-void to_json(json &j, const YOLOSettings &p);
-void from_json(const json &j, YOLOSettings &p);
+    void to_json(json &j, const YOLOSettings &p);
+    void from_json(const json &j, YOLOSettings &p);
 }
+
+void to_json(json &j, const PartInspector &p);
+void from_json(const json &j, PartInspector &p);
 
 void to_json(json &j, const TerminalParam &p);
 void from_json(const json &j, TerminalParam &p);
@@ -32,8 +35,7 @@ void from_json(const json &j, TerminalParam &p);
 void to_json(json &j, const WorkflowParam &p);
 void from_json(const json &j, WorkflowParam &p);
 
-// ── 配置管理器 ───────────────────────────────────────────────
-
+/// @brief 配置管理器
 class ConfigMgr
 {
 public:

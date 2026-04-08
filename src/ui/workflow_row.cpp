@@ -14,9 +14,9 @@ WorkflowRow::WorkflowRow(int workflow_index, const WorkflowParam &wp, QWidget *p
                 [this]()
                 { emit sign_roiClicked(workflow_index_); });
 
-        connect(ui->pushButton_config, &QPushButton::clicked, this,
+        connect(ui->pushButton_detector, &QPushButton::clicked, this,
                 [this]()
-                { emit sign_configClicked(workflow_index_); });
+                { emit sign_detectorClicked(workflow_index_); });
 }
 
 WorkflowRow::~WorkflowRow() { delete ui; }

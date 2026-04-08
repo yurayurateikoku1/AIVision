@@ -109,14 +109,6 @@ struct CameraControlParam
     int rotation_deg = 0;
 };
 
-/// @brief 单个缺陷（检测器负责填充）
-struct Defect
-{
-    std::string label; // 缺陷类型，如 "missing", "offset"
-    float confidence = 0.0f;
-    HalconCpp::HObject contour; // 缺陷区域轮廓（XLD/Region，任意形状）
-};
-
 /// @brief 形状匹配参数
 struct ShapeMatchParam
 {
@@ -134,6 +126,12 @@ struct ShapeMatchParam
     std::string metric = "use_polarity"; // 匹配极性
     std::string template_image_path;     // 模板图路径
     std::string model_path;              // 形状模型文件路径 (.shm)
+    double model_origin_row = 0;         // 模板区域中心 row（创建模型时记录）
+    double model_origin_col = 0;         // 模板区域中心 col（创建模型时记录）
+    bool display_rect = true;            // 显示外接矩形框
+    bool display_contour = true;         // 显示匹配轮廓
+    bool display_center = false;         // 显示匹配中心十字
+
 };
 
 /// @brief 形状匹配结果
@@ -155,6 +153,50 @@ enum class DetectMethod
     MatchTemplate,
 };
 
+/// @brief 部件检测 ROI（相对于模板区域中心的坐标，用于模板匹配方式）
+struct PartRoi
+{
+    int row1 = 0, col1 = 0, row2 = 0, col2 = 0;
+    bool valid() const { return row2 > row1 && col2 > col1; }
+};
+
+/// @brief Blob 检查参数
+struct BlobInspectParam
+{
+    int threshold = 128;
+    int area_min = 0;
+    int area_max = 999999;
+};
+
+/// @brief 边缘测量检查参数
+struct MeasureInspectParam
+{
+    int contrast_min = 20;
+    int contrast_max = 255;
+    int feature_limit = 2;
+    bool check_ge = true; // true: edge_count >= limit 为 OK; false: edge_count <= limit 为 OK
+};
+
+/// @brief 部件检查器参数
+struct PartInspector
+{
+    bool enabled = false;
+    PartRoi roi;
+    std::variant<BlobInspectParam, MeasureInspectParam> param;
+};
+
+/// @brief 部件类别 ID（端子检测器使用）
+enum class TermPartCls : int
+{
+    TERM = 0, // 整个端子（锚框）
+    IB = 1,   // 外卯
+    INS = 2,  // 胶皮
+    BS = 3,   // 下铜丝
+    WB = 4,   // 内贸
+    TS = 5,   // 上铜丝
+    HEAD = 6, // 端子头
+};
+
 /// @brief 端子检测参数
 struct TerminalParam
 {
@@ -167,30 +209,22 @@ struct TerminalParam
         .task_type = AIInfer::TaskType::YOLO_OBB,
         .engine_type = AIInfer::EngineType::OPENVINO};
     ShapeMatchParam shape_match_param;
-    int count = 1;              // 预期数量
+    int count_TERM = 1;         // 预期端子数量
     int parts_per_terminal = 0; // 预期部件数
+
+    /// 部件检查器表：key = PartCls 的 int 值
+    std::map<int, PartInspector> part_inspectors;
 };
 
-/// @brief 端子单个部件的检测结果
-struct TerminalPart
+/// @brief 检测器结果
+using DetectorResult = std::variant<std::monostate, ShapeMatchResult>;
+
+/// @brief 单个缺陷（检测器负责填充）
+struct Defect
 {
-    int part_id;                 // 部件名称，如 "pin", "housing", "lock" 等
-    float confidence = 0.0f;     // 检测置信度
-    float x = 0, y = 0;          // 左上角像素坐标
-    float width = 0, height = 0; // 像素尺寸（宽、高）
+    int defect_id = 0;          // 缺陷部件类别 ID
+    HalconCpp::HObject contour; // 缺陷区域轮廓
 };
-
-/// @brief 单个端子的检测结果
-struct TerminalResult
-{
-    int id = 0;                      // 端子编号
-    std::vector<TerminalPart> parts; // 部件列表
-    /// @brief 部件数量是否达标（expected<=0 表示不检查）
-    bool is_complete(int expected) const { return expected <= 0 || static_cast<int>(parts.size()) >= expected; }
-};
-
-/// @brief 检测器结果（与 WorkflowParam::detector_param 的 variant 对应）
-using DetectorResult = std::variant<std::monostate, std::vector<TerminalResult>, ShapeMatchResult>;
 
 /// @brief 检测结果
 struct InspectionResult
@@ -208,14 +242,15 @@ struct NodeContext
     std::string camera_name;
     HalconCpp::HObject src_image;         // 检测用图（可能是 ROI 裁剪后的）
     HalconCpp::HObject display_image;     // 显示用原图（始终为全图）
-    HalconCpp::HObject result_contours;   // 检测器输出的可视化图形（XLD/Region，坐标基于 image）
+    HalconCpp::HObject ok_contours;       // 正常部件轮廓（绿色显示）
+    HalconCpp::HObject ng_contours;       // 缺陷部件轮廓（红色显示）
     std::map<std::string, std::any> data; // 扩展数据
 };
 
 /// @brief ROI 裁剪（通用前处理）
 struct RoiParam
 {
-    bool enabled = false;
+    bool enable_roi = false;
     int row1 = 0, col1 = 0, row2 = 0, col2 = 0;
 };
 
@@ -235,9 +270,8 @@ struct WorkflowParam
     float exposure_override = -1.0f; // <=0 不覆盖
     RoiParam roi;
 
-    /// 检测器参数：monostate = 不检测，
-    /// TerminalParam = 端子检测
-    /// ConductorParam = 电缆检测
-    /// PlasticCasingParam =检测
-    std::variant<std::monostate, TerminalParam> detector_param;
+    /// 检测器类型名称（"Terminal" 等），空 = 不检测
+    std::string detector_type;
+    /// 检测器参数（JSON 格式，由各检测器自行序列化/反序列化）
+    json detector_param;
 };

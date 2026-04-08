@@ -50,24 +50,27 @@ signals:
     /// @brief 检测完成
     void sign_inspectionDone(int di_index,
                              const HalconCpp::HObject &display_image,
-                             const HalconCpp::HObject &result_contours,
+                             const HalconCpp::HObject &ok_contours,
+                             const HalconCpp::HObject &ng_contours,
                              const InspectionResult &result);
 
 private:
+    /// @brief 状态
     enum class State
     {
-        IDLE = 0,
-        WAITING_FRAME = 1,
-        INSPECTING = 2,
-        HOLDING_RESULT = 3
+        IDLE = 0,          // 空闲
+        WAITING_FRAME = 1, // 等待帧
+        INSPECTING = 2,    // 检测中
+        HOLDING_RESULT = 3 // 检测结果保持
     };
 
+    /// @brief 事件
     enum class Event
     {
-        DI_RISING,
-        FRAME_ARRIVED,
-        INSPECT_DONE,
-        HOLD_EXPIRED
+        DI_RISING,     // DI 上升
+        FRAME_ARRIVED, // 帧到达
+        INSPECT_DONE,  // 检测完成
+        HOLD_EXPIRED   // 检测结果保持超时
     };
 
     void dispatch(Event event);

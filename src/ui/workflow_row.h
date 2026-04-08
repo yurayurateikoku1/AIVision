@@ -20,7 +20,7 @@ public:
 
 signals:
 
-    void sign_configClicked(int workflow_index);
+    void sign_detectorClicked(int workflow_index);
     void sign_roiClicked(int workflow_index);
     void sign_enabledChanged(int workflow_index, bool enabled);
 

@@ -2,10 +2,13 @@
 #include "ui_workflow_view.h"
 #include "workflow_row.h"
 #include "camera_window.h"
-#include "workflow_config_dialog.h"
+#include "product_class/detector_param_widget_factory.h"
 #include "../context.h"
 #include "../workflow/workflow_mgr.h"
 #include <QVBoxLayout>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QLabel>
 #include <spdlog/spdlog.h>
 
 WorkflowView::WorkflowView(Context &ctx, WorkflowMgr &wf_mgr, QWidget *parent)
@@ -61,7 +64,7 @@ void WorkflowView::initPage()
                     connect(camera_view_, &CameraWindow::sign_roiSelected, this, [this, i](double r1, double c1, double r2, double c2)
                             {
                                 auto &roi = ctx_.workflows[i].roi;
-                                roi.enabled = true;
+                                roi.enable_roi = true;
                                 roi.row1 = static_cast<int>(r1);
                                 roi.col1 = static_cast<int>(c1);
                                 roi.row2 = static_cast<int>(r2);
@@ -76,16 +79,44 @@ void WorkflowView::initPage()
                     ctx_.workflows[i].enabled = enabled;
                 });
 
-        // 配置 — 非模态对话框，允许同时操作相机窗口（如画 ROI）
-        connect(row, &WorkflowRow::sign_configClicked, this,
+        // 配置 — 仅弹出检测器参数（非模态，允许同时操作相机窗口）
+        connect(row, &WorkflowRow::sign_detectorClicked, this,
                 [this, i](int index)
                 {
-                    auto *dlg = new WorkflowConfigDialog(ctx_.workflows[i], camera_view_, this);
+                    auto *dlg = new QDialog(this);
+                    dlg->setWindowTitle(QString("DI%1 检测器参数").arg(i));
                     dlg->setAttribute(Qt::WA_DeleteOnClose);
-                    connect(dlg, &QDialog::accepted, this, [this, i, dlg]()
+                    auto *layout = new QVBoxLayout(dlg);
+
+                    auto param_copy = std::make_shared<json>(ctx_.workflows[i].detector_param);
+                    std::function<void()> apply_fn;
+                    QWidget *detector_widget = createDetectorParamWidget(
+                        ctx_.workflows[i].detector_type, *param_copy, apply_fn,
+                        i, camera_view_, dlg);
+
+                    if (detector_widget)
+                        layout->addWidget(detector_widget);
+                    else
                     {
-                        wf_mgr_.updateParam(i, dlg->getResult());
-                    });
+                        auto *label = new QLabel(QStringLiteral("未绑定检测器"), dlg);
+                        label->setAlignment(Qt::AlignCenter);
+                        layout->addWidget(label);
+                    }
+
+                    auto *buttonBox = new QDialogButtonBox(
+                        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dlg);
+                    layout->addWidget(buttonBox);
+
+                    connect(buttonBox, &QDialogButtonBox::accepted, dlg,
+                            [this, i, dlg, apply_fn, param_copy]()
+                            {
+                                if (apply_fn)
+                                    apply_fn();
+                                ctx_.workflows[i].detector_param = *param_copy;
+                                wf_mgr_.updateParam(i, ctx_.workflows[i]);
+                                dlg->accept();
+                            });
+                    connect(buttonBox, &QDialogButtonBox::rejected, dlg, &QDialog::reject);
                     dlg->show();
                 });
     }
